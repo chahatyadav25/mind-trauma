@@ -1,0 +1,8 @@
+{
+  "name": "MindTrauma Screener",
+  "description": "Validated clinical PTSD screening, DSM-5 trauma psychoeducation, and compassionate AI support.",
+  "requestFramePermissions": [],
+  "majorCapabilities": [
+    "MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"
+  ]
+}
