@@ -14,7 +14,7 @@ const TABS: { id: ViewId; label: string }[] = [
   { id: 'assessment', label: '5. Questionnaire' },
   { id: 'results', label: '6. Results' },
   { id: 'symptoms', label: '7. Symptom Overview' },
-  { id: 'chat', label: '8. AI Assistant' },
+  { id: 'chat', label: '8. AASRA' },
   { id: 'resources', label: '9. Resources' },
   { id: 'dashboard', label: '10. Dashboard' },
   { id: 'history', label: '11. History' },
@@ -36,8 +36,8 @@ export const NavTabs: React.FC<NavTabsProps> = ({ currentView, onNavigate }) => 
   }, [currentView]);
 
   return (
-    <div className="sticky top-16 z-40 bg-white/95 backdrop-blur-md px-3 py-2.5 border-b border-gray-200 shadow-2xs">
-      <div ref={containerRef} className="flex items-center gap-1.5 overflow-x-auto no-scrollbar max-w-[46rem] mx-auto">
+    <div className="sticky top-16 z-40 bg-white/90 backdrop-blur-md px-4 sm:px-6 lg:px-8 py-2 border-b border-gray-200/80 shadow-2xs">
+      <div ref={containerRef} className="flex items-center gap-1.5 overflow-x-auto no-scrollbar max-w-7xl mx-auto">
         {TABS.map((tab) => {
           const isActive = currentView === tab.id;
           return (

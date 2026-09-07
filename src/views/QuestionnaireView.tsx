@@ -1,6 +1,15 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { PC_PTSD_5_QUESTIONS } from '../data/screeningData';
-import { Calendar, HelpCircle, ChevronDown, ArrowLeft, ArrowRight, CheckCircle2, PhoneCall } from 'lucide-react';
+import { 
+  Calendar, 
+  HelpCircle, 
+  ChevronDown, 
+  ArrowLeft, 
+  ArrowRight, 
+  CheckCircle2, 
+  PhoneCall,
+  ShieldCheck
+} from 'lucide-react';
 
 interface QuestionnaireViewProps {
   currentQuestionIndex: number;
@@ -19,65 +28,110 @@ export const QuestionnaireView: React.FC<QuestionnaireViewProps> = ({
   onPrev,
   onOpenCrisis,
 }) => {
-  const [whyOpen, setWhyOpen] = useState(false);
+  const [whyOpen, setWhyOpen] = useState(true);
   const qData = PC_PTSD_5_QUESTIONS[currentQuestionIndex];
   const currentAnswer = userAnswers[currentQuestionIndex];
   const progressPct = ((currentQuestionIndex + 1) / PC_PTSD_5_QUESTIONS.length) * 100;
   const isLastQuestion = currentQuestionIndex === PC_PTSD_5_QUESTIONS.length - 1;
 
+  // Desktop keyboard shortcuts (Y = Yes, N = No, Enter = Next when answered)
+  useEffect(() => {
+    const handleKey = (e: KeyboardEvent) => {
+      if (e.key === 'y' || e.key === 'Y') {
+        onSelectAnswer(currentQuestionIndex, true);
+      } else if (e.key === 'n' || e.key === 'N') {
+        onSelectAnswer(currentQuestionIndex, false);
+      } else if (e.key === 'Enter' && currentAnswer !== null) {
+        onNext();
+      }
+    };
+    window.addEventListener('keydown', handleKey);
+    return () => window.removeEventListener('keydown', handleKey);
+  }, [currentQuestionIndex, currentAnswer, onSelectAnswer, onNext]);
+
   return (
-    <div className="flex flex-col w-full max-w-[46rem] mx-auto px-4 py-4">
-      {/* Header & Stepper Progress */}
-      <div className="mb-4">
-        <div className="flex items-center justify-between mb-2">
-          <span className="text-xs font-bold uppercase tracking-wider text-red-600 flex items-center gap-1 font-display">
-            PC-PTSD-5 Screener
-          </span>
-          <span className="text-xs font-bold text-gray-900 bg-sky-50 border border-sky-100 px-2.5 py-0.5 rounded-full">
+    <div className="flex flex-col w-full max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-6 sm:py-10">
+      {/* Header & Clinical Progress Tracker */}
+      <div className="mb-6">
+        <div className="flex items-center justify-between mb-3">
+          <div className="flex items-center gap-2">
+            <span className="text-xs font-bold uppercase tracking-wider text-red-600 font-display">
+              PC-PTSD-5 Clinical Assessment
+            </span>
+            <span className="text-gray-300">•</span>
+            <span className="text-xs text-gray-500 font-medium hidden sm:inline">
+              Primary Care PTSD Screen for DSM-5
+            </span>
+          </div>
+          <span className="text-xs font-bold text-gray-900 bg-white border border-gray-200 px-3 py-1 rounded-full shadow-2xs">
             Question {currentQuestionIndex + 1} of {PC_PTSD_5_QUESTIONS.length}
           </span>
         </div>
 
-        {/* Progress Bar */}
-        <div className="w-full h-2 rounded-full bg-gray-200 overflow-hidden">
-          <div
-            className="h-full bg-black transition-all duration-300 rounded-full"
-            style={{ width: `${progressPct}%` }}
-          />
+        {/* Multi-Step Desktop Progress Tracker */}
+        <div className="grid grid-cols-5 gap-2 mb-2">
+          {PC_PTSD_5_QUESTIONS.map((_, idx) => {
+            const isDone = userAnswers[idx] !== null;
+            const isCurrent = idx === currentQuestionIndex;
+            return (
+              <div
+                key={idx}
+                className={`h-2 rounded-full transition-all duration-300 ${
+                  isCurrent
+                    ? 'bg-black'
+                    : isDone
+                    ? 'bg-teal-600'
+                    : 'bg-gray-200'
+                }`}
+              />
+            );
+          })}
         </div>
       </div>
 
-      {/* Question Card */}
-      <div className="bg-white p-5 sm:p-7 rounded-3xl border border-gray-200 shadow-2xs mb-4">
-        <div className="flex items-center gap-1.5 text-gray-600 text-xs mb-3 font-medium">
-          <Calendar className="w-4 h-4 text-teal-700" />
-          <span className="font-semibold text-teal-800">Past-month timeframe</span>
+      {/* Primary Question Assessment Card */}
+      <div className="bg-white p-6 sm:p-10 rounded-3xl border border-gray-200 shadow-xs mb-6">
+        <div className="flex flex-wrap items-center justify-between gap-2 mb-4">
+          <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-teal-50 text-teal-800 text-xs font-semibold border border-teal-200/80">
+            <Calendar className="w-3.5 h-3.5 text-teal-600" />
+            <span>Timeframe: In the past month</span>
+          </div>
+          <span className="text-xs text-gray-400 font-medium hidden sm:inline">
+            Press <kbd className="px-1.5 py-0.5 rounded bg-gray-100 border text-gray-700 font-mono text-[10px]">Y</kbd> or <kbd className="px-1.5 py-0.5 rounded bg-gray-100 border text-gray-700 font-mono text-[10px]">N</kbd> on keyboard
+          </span>
         </div>
 
-        <h2 className="text-lg sm:text-xl text-gray-900 font-bold mb-6 leading-relaxed font-display">
+        <h2 className="text-xl sm:text-2xl lg:text-3xl text-gray-950 font-bold mb-8 leading-snug font-display">
           {qData.q}
         </h2>
 
-        {/* Large YES / NO Cards */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5 mb-5">
+        {/* Large Tactile YES / NO Desktop Choice Buttons */}
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-8">
           {/* YES Button */}
           <button
             type="button"
             onClick={() => onSelectAnswer(currentQuestionIndex, true)}
-            className={`p-4 sm:p-5 rounded-2xl text-gray-900 border-2 flex items-center justify-between transition-all active:scale-[0.98] text-left ${
+            className={`p-5 sm:p-6 rounded-2xl border-2 flex items-center justify-between transition-all active:scale-[0.99] text-left cursor-pointer ${
               currentAnswer === true
-                ? 'border-black bg-sky-50/80 shadow-xs'
-                : 'bg-gray-50/70 hover:bg-sky-50/40 border-gray-200'
+                ? 'border-black bg-teal-50/50 shadow-xs ring-2 ring-black/5'
+                : 'bg-gray-50/70 hover:bg-white hover:border-gray-300 border-gray-200'
             }`}
           >
-            <div className="flex items-center gap-3">
-              <span className="w-9 h-9 rounded-xl bg-white border border-gray-200 flex items-center justify-center font-bold text-black shadow-2xs">
+            <div className="flex items-center gap-4">
+              <span className={`w-10 h-10 rounded-xl flex items-center justify-center font-bold text-sm border transition-colors ${
+                currentAnswer === true 
+                  ? 'bg-black text-white border-black' 
+                  : 'bg-white text-gray-700 border-gray-300'
+              }`}>
                 Y
               </span>
-              <span className="text-base font-bold font-display">Yes</span>
+              <div>
+                <span className="text-lg font-bold font-display text-gray-950 block">Yes</span>
+                <span className="text-xs text-gray-500">I have experienced this</span>
+              </div>
             </div>
             <CheckCircle2
-              className={`w-6 h-6 text-black transition-opacity ${
+              className={`w-7 h-7 text-teal-700 transition-opacity ${
                 currentAnswer === true ? 'opacity-100' : 'opacity-0'
               }`}
             />
@@ -87,85 +141,99 @@ export const QuestionnaireView: React.FC<QuestionnaireViewProps> = ({
           <button
             type="button"
             onClick={() => onSelectAnswer(currentQuestionIndex, false)}
-            className={`p-4 sm:p-5 rounded-2xl text-gray-900 border-2 flex items-center justify-between transition-all active:scale-[0.98] text-left ${
+            className={`p-5 sm:p-6 rounded-2xl border-2 flex items-center justify-between transition-all active:scale-[0.99] text-left cursor-pointer ${
               currentAnswer === false
-                ? 'border-black bg-sky-50/80 shadow-xs'
-                : 'bg-gray-50/70 hover:bg-sky-50/40 border-gray-200'
+                ? 'border-black bg-teal-50/50 shadow-xs ring-2 ring-black/5'
+                : 'bg-gray-50/70 hover:bg-white hover:border-gray-300 border-gray-200'
             }`}
           >
-            <div className="flex items-center gap-3">
-              <span className="w-9 h-9 rounded-xl bg-white border border-gray-200 flex items-center justify-center font-bold text-black shadow-2xs">
+            <div className="flex items-center gap-4">
+              <span className={`w-10 h-10 rounded-xl flex items-center justify-center font-bold text-sm border transition-colors ${
+                currentAnswer === false 
+                  ? 'bg-black text-white border-black' 
+                  : 'bg-white text-gray-700 border-gray-300'
+              }`}>
                 N
               </span>
-              <span className="text-base font-bold font-display">No</span>
+              <div>
+                <span className="text-lg font-bold font-display text-gray-950 block">No</span>
+                <span className="text-xs text-gray-500">I have not experienced this</span>
+              </div>
             </div>
             <CheckCircle2
-              className={`w-6 h-6 text-black transition-opacity ${
+              className={`w-7 h-7 text-teal-700 transition-opacity ${
                 currentAnswer === false ? 'opacity-100' : 'opacity-0'
               }`}
             />
           </button>
         </div>
 
-        {/* Expandable Clinical Rationale Accordion */}
-        <div className="rounded-xl bg-gray-50 border border-gray-200 overflow-hidden">
+        {/* Clinical Rationale Accordion */}
+        <div className="rounded-2xl bg-gray-50/90 border border-gray-200/90 overflow-hidden">
           <button
             type="button"
             onClick={() => setWhyOpen(prev => !prev)}
-            className="w-full px-4 py-3 flex items-center justify-between text-gray-700 text-xs hover:text-black transition-colors text-left"
+            className="w-full px-5 py-3.5 flex items-center justify-between text-gray-800 text-xs sm:text-sm hover:text-black transition-colors text-left"
           >
-            <span className="flex items-center gap-1.5 font-semibold text-black">
-              <HelpCircle className="w-4 h-4 text-sky-700" />
-              Why are we asking this?
+            <span className="flex items-center gap-2 font-semibold text-gray-900">
+              <HelpCircle className="w-4 h-4 text-teal-700" />
+              <span>Why are clinicians asking this question?</span>
             </span>
             <ChevronDown
-              className={`w-4 h-4 text-gray-500 transition-transform ${
+              className={`w-4 h-4 text-gray-500 transition-transform duration-200 ${
                 whyOpen ? 'rotate-180' : 'rotate-0'
               }`}
             />
           </button>
           {whyOpen && (
-            <div className="px-4 pb-3.5 pt-0.5 text-xs text-gray-600 leading-relaxed border-t border-gray-100">
+            <div className="px-5 pb-4 pt-1 text-xs sm:text-sm text-gray-600 leading-relaxed border-t border-gray-200/60">
               {qData.why}
             </div>
           )}
         </div>
       </div>
 
-      {/* Navigation Buttons */}
-      <div className="flex items-center justify-between gap-3">
+      {/* Desktop Navigation Footer Controls */}
+      <div className="flex items-center justify-between gap-4">
         <button
           type="button"
           onClick={onPrev}
           disabled={currentQuestionIndex === 0}
-          className="px-4 py-2.5 rounded-xl bg-gray-100 text-gray-800 text-xs font-semibold hover:bg-gray-200 transition-colors flex items-center gap-1.5 disabled:opacity-40 disabled:cursor-not-allowed border border-gray-200"
+          className="px-5 py-3 rounded-xl bg-white text-gray-800 text-xs sm:text-sm font-semibold hover:bg-gray-100 transition-colors flex items-center gap-2 disabled:opacity-40 disabled:cursor-not-allowed border border-gray-200 shadow-2xs cursor-pointer"
         >
           <ArrowLeft className="w-4 h-4" />
-          <span>Back</span>
+          <span>Previous Question</span>
         </button>
 
         <button
           type="button"
           onClick={onNext}
           disabled={currentAnswer === null}
-          className={`px-6 py-2.5 rounded-xl bg-black text-white text-xs font-semibold shadow-xs transition-all flex items-center gap-1.5 ${
-            currentAnswer !== null ? 'opacity-100 hover:bg-gray-800' : 'opacity-40 cursor-not-allowed'
+          className={`px-8 py-3 rounded-xl bg-black text-white text-xs sm:text-sm font-semibold shadow-sm transition-all flex items-center gap-2 ${
+            currentAnswer !== null 
+              ? 'opacity-100 hover:bg-gray-800 cursor-pointer active:scale-98' 
+              : 'opacity-40 cursor-not-allowed'
           }`}
         >
-          <span>{isLastQuestion ? 'Complete Assessment' : 'Next Question'}</span>
+          <span>{isLastQuestion ? 'Review Clinical Results' : 'Next Question'}</span>
           <ArrowRight className="w-4 h-4" />
         </button>
       </div>
 
-      {/* Safety Anchor */}
-      <div className="mt-5 text-center">
+      {/* Safety & Confidentiality Bar */}
+      <div className="mt-8 pt-4 border-t border-gray-200 flex flex-col sm:flex-row items-center justify-between gap-3 text-xs text-gray-500 text-center sm:text-left">
+        <span className="flex items-center gap-1.5 font-medium">
+          <ShieldCheck className="w-4 h-4 text-teal-700" />
+          Responses are processed locally in-browser
+        </span>
+
         <button
           type="button"
           onClick={onOpenCrisis}
-          className="text-xs text-gray-600 hover:text-red-600 transition-colors inline-flex items-center gap-1.5"
+          className="text-gray-600 hover:text-red-700 transition-colors inline-flex items-center gap-1.5 cursor-pointer"
         >
           <PhoneCall className="w-3.5 h-3.5 text-red-600" />
-          <span>Feeling distressed right now? <strong>Call 988 for immediate help</strong></span>
+          <span>Need immediate emotional support? <strong>Call Tele-MANAS (14416) or Emergency (112)</strong></span>
         </button>
       </div>
     </div>

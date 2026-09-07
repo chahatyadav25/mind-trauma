@@ -11,9 +11,10 @@ function getClinicalFallbackResponse(message: string): string {
 
   if (['die', 'suicide', 'kill myself', 'hurt myself', 'end it', 'emergency', 'harm', 'overdose'].some(w => lower.includes(w))) {
     return `⚠️ Your immediate safety is the highest priority. Please connect with caring human support right now:
-• Call or text 988 (Suicide & Crisis Lifeline - free, confidential, 24/7 in the US & Canada).
-• Text HOME to 741741 (Crisis Text Line).
-• If you are in immediate physical danger, please call 911 or visit the nearest emergency room. You do not have to carry this alone.`;
+• Call Tele-MANAS: 14416 or 1800-891-4416 (Govt of India 24/7 free toll-free helpline across 20+ Indian languages).
+• Call KIRAN: 1800-599-0019 (24/7 Mental Health Helpline by Ministry of Social Justice & Empowerment).
+• Call or WhatsApp Vandrevala Foundation: +91 9999 666 555 (Free 24/7 counseling across India).
+• For immediate physical or medical danger in India, please dial 112 (National Emergency) or 108/102 (Ambulance), or visit the nearest emergency room. You do not have to carry this alone.`;
   }
 
   if (lower.includes('score') || lower.includes('result') || lower.includes('screening')) {
@@ -73,20 +74,13 @@ async function startServer() {
         });
       }
 
-      const ai = new GoogleGenAI({
-        apiKey,
-        httpOptions: {
-          headers: {
-            'User-Agent': 'aistudio-build',
-          }
-        }
-      });
+      const ai = new GoogleGenAI({ apiKey });
 
-      const systemInstruction = `You are MindTrauma AI, an empathetic, trauma-informed psychoeducational assistant.
+      const systemInstruction = `You are AASRA, an empathetic, trauma-informed psychoeducational assistant.
 You provide supportive information, explain PTSD symptoms according to DSM-5 (Intrusive memories, Avoidance, Hyperarousal & reactivity, Negative cognitions & mood), and guide users through nervous system regulation exercises (5-4-3-2-1 grounding, box breathing).
 CLINICAL BOUNDARIES & SAFETY PROTOCOLS:
 1. You are NOT a doctor, therapist, or emergency service. Never diagnose.
-2. If the user expresses thoughts of suicide, self-harm, severe crisis, or immediate danger, lead immediately with Crisis 988 Lifeline (call/text 988 in the US/Canada) and 741741 text line.
+2. If the user expresses thoughts of suicide, self-harm, severe crisis, or immediate danger, lead immediately with Indian Crisis Helplines: Tele-MANAS (14416 / 1800-891-4416), KIRAN (1800-599-0019), Vandrevala Foundation (+91 9999 666 555), and National Emergency (112).
 3. Keep responses warm, non-judgmental, validating, gentle, concise (2-3 short paragraphs maximum), and easily readable.`;
 
       const contents = [];
@@ -105,16 +99,31 @@ CLINICAL BOUNDARIES & SAFETY PROTOCOLS:
         parts: [{ text: message }]
       });
 
-      const response = await ai.models.generateContent({
-        model: 'gemini-3.8-flash',
-        contents,
-        config: {
-          systemInstruction,
-        }
-      });
+      let response;
+      let usedModel = 'gemini-3.6-flash';
+      try {
+        response = await ai.models.generateContent({
+          model: 'gemini-3.6-flash',
+          contents,
+          config: {
+            systemInstruction,
+          }
+        });
+      } catch (err: any) {
+        console.warn('gemini-3.6-flash attempt failed, trying gemini-3.8-flash:', err?.message);
+        usedModel = 'gemini-3.8-flash';
+        response = await ai.models.generateContent({
+          model: 'gemini-3.8-flash',
+          contents,
+          config: {
+            systemInstruction,
+          }
+        });
+      }
 
       const replyText = response.text || getClinicalFallbackResponse(message);
-      res.json({ reply: replyText, isFallback: false });
+      console.log(`[Chat API] Responded using ${usedModel} (${replyText.length} chars)`);
+      res.json({ reply: replyText, isFallback: false, model: usedModel });
     } catch (error: any) {
       console.warn('Gemini API call failed, using clinical fallback:', error?.message);
       res.json({

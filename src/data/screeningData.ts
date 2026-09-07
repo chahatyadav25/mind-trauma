@@ -70,46 +70,79 @@ export const DSM5_CLUSTERS: SymptomCluster[] = [
 
 export const INITIAL_RESOURCES: ResourceItem[] = [
   {
+    id: 'res-telemanas',
+    title: 'Tele-MANAS: National Tele Mental Health Programme of India',
+    category: 'crisis',
+    badge: 'Govt of India • 24/7',
+    meta: 'Toll-Free 14416',
+    description: 'Free, confidential mental health counseling across 20+ regional Indian languages run by the Ministry of Health and NIMHANS Bangalore.',
+    actionType: 'external',
+    actionUrl: 'tel:14416',
+    actionLabel: 'Call 14416 Toll-Free →'
+  },
+  {
+    id: 'res-kiran',
+    title: 'KIRAN National Mental Health Helpline',
+    category: 'crisis',
+    badge: 'Ministry of Social Justice',
+    meta: 'Toll-Free 1800-599-0019',
+    description: '24/7 helpline by Govt of India offering psychological first aid, crisis intervention, and mental health rehabilitation support in 13 languages.',
+    actionType: 'external',
+    actionUrl: 'tel:18005990019',
+    actionLabel: 'Call 1800-599-0019 →'
+  },
+  {
+    id: 'res-vandrevala',
+    title: 'Vandrevala Foundation Mental Health Helpline',
+    category: 'crisis',
+    badge: '24/7 Phone & WhatsApp',
+    meta: 'Helpline +91 9999 666 555',
+    description: 'Experienced clinical psychologists providing free, compassionate crisis counseling and emotional support across India via call and WhatsApp.',
+    actionType: 'external',
+    actionUrl: 'tel:9999666555',
+    actionLabel: 'Call 9999 666 555 →'
+  },
+  {
+    id: 'res-nimhans',
+    title: 'NIMHANS Trauma & Disaster Care Centre',
+    category: 'care',
+    badge: 'Premier Institute • India',
+    meta: 'NIMHANS Bengaluru',
+    description: 'Apex clinical neuropsychiatry institute in India providing specialized treatment for PTSD, complex trauma, and psychological support.',
+    actionType: 'external',
+    actionUrl: 'https://nimhans.ac.in',
+    actionLabel: 'Visit NIMHANS Portal ↗'
+  },
+  {
     id: 'res-1',
     title: '5-4-3-2-1 Sensory Grounding Guide',
     category: 'grounding',
-    badge: 'Coping & Grounding',
+    badge: 'Somatic & Grounding',
     meta: '5 min exercise',
-    description: 'A somatic anchor technique to calm the nervous system when hyperarousal or panic surges.',
+    description: 'A somatic anchor technique to calm the nervous system when hyperarousal, startle, or intrusive memories surge.',
     actionType: 'modal',
     actionLabel: 'Launch interactive guide →'
   },
   {
-    id: 'res-2',
-    title: 'SAMHSA National Helpline & Treatment Locator',
-    category: 'care',
-    badge: 'Professional Care',
-    meta: 'Clinical Directory',
-    description: 'Confidential, 24/7, 365-day-a-year treatment referral service for individuals facing mental health challenges.',
-    actionType: 'external',
-    actionUrl: 'https://www.samhsa.gov/find-help/national-helpline',
-    actionLabel: 'Visit SAMHSA.gov ↗'
-  },
-  {
-    id: 'res-3',
-    title: 'National Center for PTSD Patient & Family Portal',
-    category: 'care',
-    badge: 'National Center for PTSD',
-    meta: 'Validated Guides',
-    description: 'In-depth educational materials on evidence-informed therapies like EMDR, Prolonged Exposure, and CPT.',
-    actionType: 'external',
-    actionUrl: 'https://www.ptsd.va.gov',
-    actionLabel: 'Explore VA PTSD portal ↗'
-  },
-  {
     id: 'res-4',
-    title: 'Box Breathing for Nervous System Regulation',
+    title: 'Pranayama & Diaphragmatic Box Breathing',
     category: 'sleep',
     badge: 'Sleep & Calming',
-    meta: '4 min somatic',
-    description: 'Inhale for 4s, hold for 4s, exhale for 4s, hold for 4s to trigger vagal nerve calming and ease autonomic tension.',
+    meta: '4 min somatic practice',
+    description: 'Traditional rhythmic breathing (Sama Vritti / 4-4-4-4) to stimulate the vagus nerve and down-regulate autonomic nervous tension.',
     actionType: 'modal',
     actionLabel: 'Practice breathing exercise →'
+  },
+  {
+    id: 'res-icall',
+    title: 'iCALL Psychosocial Helpline (TISS)',
+    category: 'care',
+    badge: 'Tata Institute of Social Sciences',
+    meta: 'Mon-Sat 10am-8pm • 9152987821',
+    description: 'Professional counseling service run by trained mental health professionals from the School of Human Ecology, TISS Mumbai.',
+    actionType: 'external',
+    actionUrl: 'https://icallhelpline.org',
+    actionLabel: 'Explore iCALL Resources ↗'
   }
 ];
 

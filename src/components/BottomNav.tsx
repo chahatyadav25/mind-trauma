@@ -12,14 +12,14 @@ export const BottomNav: React.FC<BottomNavProps> = ({ currentView, onNavigate })
     { id: 'landing', label: 'Home', icon: <Home className="w-5 h-5" /> },
     { id: 'assessment', label: 'Screening', icon: <ClipboardList className="w-5 h-5" /> },
     { id: 'results', label: 'Results', icon: <BarChart3 className="w-5 h-5" /> },
-    { id: 'chat', label: 'AI Support', icon: <Bot className="w-5 h-5" /> },
+    { id: 'chat', label: 'AASRA', icon: <Bot className="w-5 h-5" /> },
     { id: 'resources', label: 'Resources', icon: <BookOpen className="w-5 h-5" /> },
     { id: 'dashboard', label: 'Dashboard', icon: <LayoutDashboard className="w-5 h-5" /> },
   ];
 
   return (
-    <nav className="fixed bottom-0 w-full z-50 bg-white/95 backdrop-blur-xl border-t border-gray-200 shadow-md pb-safe">
-      <div className="flex justify-around items-center h-16 px-1 max-w-[46rem] mx-auto">
+    <nav className="md:hidden fixed bottom-0 w-full z-50 bg-white/95 backdrop-blur-xl border-t border-gray-200 shadow-md pb-safe">
+      <div className="flex justify-around items-center h-16 px-2 max-w-lg mx-auto">
         {navItems.map((item) => {
           const isActive =
             currentView === item.id ||

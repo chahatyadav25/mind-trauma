@@ -1,7 +1,6 @@
 import React, { useState } from 'react';
 import { ViewId } from './types';
 import { Header } from './components/Header';
-import { NavTabs } from './components/NavTabs';
 import { BottomNav } from './components/BottomNav';
 import { CrisisModal } from './components/CrisisModal';
 import { GroundingModal } from './components/GroundingModal';
@@ -75,13 +74,11 @@ export default function App() {
         currentView={currentView}
         onNavigate={handleNavigate}
         onOpenCrisis={() => setIsCrisisModalOpen(true)}
+        onOpenGrounding={() => setIsGroundingModalOpen(true)}
       />
 
       {/* Main Content Body */}
-      <main className="flex-1 flex flex-col relative w-full pt-16 pb-24 bg-[#F5FAFC]">
-        {/* 12-Module Quick Tab Carousel */}
-        <NavTabs currentView={currentView} onNavigate={handleNavigate} />
-
+      <main className="flex-1 flex flex-col relative w-full pt-16 pb-20 md:pb-10 bg-[#F5FAFC]">
         {/* Dynamic View Pane */}
         <div className="flex-1 flex flex-col w-full">
           {currentView === 'landing' && (

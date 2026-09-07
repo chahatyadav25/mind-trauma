@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { ViewId } from '../types';
-import { Brain, ShieldAlert, History, WifiOff, Phone, ArrowRight } from 'lucide-react';
+import { Brain, ShieldAlert, History, WifiOff, Phone, ArrowRight, ShieldCheck } from 'lucide-react';
 
 interface StatesViewProps {
   onNavigate: (view: ViewId) => void;
@@ -11,33 +11,41 @@ export const StatesView: React.FC<StatesViewProps> = ({ onNavigate, onOpenCrisis
   const [activeState, setActiveState] = useState<'calc' | 'escalation' | 'empty' | 'offline'>('calc');
 
   return (
-    <div className="flex flex-col w-full max-w-[46rem] mx-auto px-4 py-4">
-      <div className="mb-4">
-        <span className="text-xs text-red-600 font-bold uppercase tracking-wider block mb-1">
-          Interactive UI States
-        </span>
-        <h2 className="text-2xl font-bold text-gray-900 font-display">System State Sandbox</h2>
-        <p className="text-xs sm:text-sm text-gray-600 mt-1 leading-relaxed">
-          Preview the resilient error boundaries, clinical calculation loaders, empty states, and escalation alerts designed for sensitive healthcare contexts.
+    <div className="flex flex-col w-full max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 sm:py-10">
+      <div className="mb-6">
+        <div className="flex items-center gap-2 mb-1">
+          <span className="text-xs text-red-600 font-bold uppercase tracking-wider font-display">
+            Interactive System States
+          </span>
+          <span className="text-gray-300">•</span>
+          <span className="text-xs text-teal-800 bg-teal-50 px-2.5 py-0.5 rounded-full border border-teal-200/60 font-medium">
+            Resilient Healthcare Fallbacks
+          </span>
+        </div>
+        <h1 className="text-2xl sm:text-3xl font-bold text-gray-950 font-display">
+          System &amp; UI State Sandbox
+        </h1>
+        <p className="text-xs sm:text-sm text-gray-600 mt-1 leading-relaxed max-w-3xl">
+          Preview the resilient fallback boundaries, clinical calculation loaders, empty states, and crisis escalation alerts designed for sensitive health environments.
         </p>
       </div>
 
       {/* State Selector Tabs */}
-      <div className="flex items-center gap-1.5 overflow-x-auto pb-2 mb-4 no-scrollbar">
+      <div className="flex items-center gap-2 overflow-x-auto pb-2 mb-6 no-scrollbar">
         {[
-          { id: 'calc', label: 'Clinical Processing' },
-          { id: 'escalation', label: 'Safety Escalation' },
-          { id: 'empty', label: 'Empty History' },
-          { id: 'offline', label: 'Network / Offline' },
+          { id: 'calc', label: 'Clinical Processing Loader' },
+          { id: 'escalation', label: 'Safety Escalation Alert' },
+          { id: 'empty', label: 'Zero State / Empty History' },
+          { id: 'offline', label: 'Offline / Network Degradation' },
         ].map((item) => (
           <button
             key={item.id}
             type="button"
             onClick={() => setActiveState(item.id as any)}
-            className={`px-3.5 py-1.5 rounded-full text-xs transition-all whitespace-nowrap shrink-0 ${
+            className={`px-4 py-2 rounded-xl text-xs sm:text-sm transition-all whitespace-nowrap shrink-0 cursor-pointer ${
               activeState === item.id
                 ? 'bg-black text-white font-semibold shadow-xs'
-                : 'bg-gray-100 text-gray-700 hover:bg-gray-200 font-medium'
+                : 'bg-white text-gray-700 hover:bg-gray-100 font-medium border border-gray-200'
             }`}
           >
             {item.label}
@@ -45,53 +53,53 @@ export const StatesView: React.FC<StatesViewProps> = ({ onNavigate, onOpenCrisis
         ))}
       </div>
 
-      {/* Container for Sub-states */}
-      <div className="bg-white p-6 sm:p-8 rounded-3xl border border-gray-200 shadow-2xs min-h-[360px] flex items-center justify-center">
+      {/* Preview Container */}
+      <div className="bg-white p-8 sm:p-14 rounded-3xl border border-gray-200 shadow-xs min-h-[420px] flex items-center justify-center">
         {/* State 1: Clinical Processing */}
         {activeState === 'calc' && (
-          <div className="flex flex-col items-center text-center max-w-sm animate-in fade-in duration-200">
-            <div className="relative w-20 h-20 mb-4 flex items-center justify-center">
-              <div className="absolute inset-0 rounded-full bg-sky-100 animate-ping opacity-75" />
-              <div className="w-16 h-16 rounded-full bg-sky-50 border border-sky-200 text-sky-700 flex items-center justify-center shadow-inner">
-                <Brain className="w-8 h-8 animate-pulse" />
+          <div className="flex flex-col items-center text-center max-w-md animate-in fade-in duration-200">
+            <div className="relative w-24 h-24 mb-6 flex items-center justify-center">
+              <div className="absolute inset-0 rounded-full bg-teal-100/60 animate-ping opacity-75" />
+              <div className="w-20 h-20 rounded-3xl bg-teal-50 border border-teal-200 text-teal-700 flex items-center justify-center shadow-inner">
+                <Brain className="w-10 h-10 animate-pulse" />
               </div>
             </div>
-            <h3 className="text-base font-bold text-gray-900 mb-1 font-display">
-              Analyzing Responses
+            <h3 className="text-xl font-bold text-gray-950 mb-2 font-display">
+              Analyzing Screening Responses
             </h3>
-            <p className="text-xs text-gray-600 leading-relaxed mb-4">
-              Cross-referencing PC-PTSD-5 DSM-5 criteria, checking for symptom cluster markers, and preparing supportive guidance...
+            <p className="text-xs sm:text-sm text-gray-600 leading-relaxed mb-6">
+              Cross-referencing affirmative items against PC-PTSD-5 DSM-5 criteria, evaluating symptom cluster indicators, and preparing trauma-informed guidance...
             </p>
-            <div className="w-48 h-1.5 bg-gray-200 rounded-full overflow-hidden">
-              <div className="h-full bg-black rounded-full animate-pulse w-3/4" />
+            <div className="w-64 h-2 bg-gray-100 rounded-full overflow-hidden">
+              <div className="h-full bg-teal-700 rounded-full animate-pulse w-3/4" />
             </div>
           </div>
         )}
 
         {/* State 2: Safety Escalation */}
         {activeState === 'escalation' && (
-          <div className="flex flex-col items-center text-center max-w-sm animate-in fade-in duration-200">
-            <div className="w-16 h-16 rounded-2xl bg-red-100 border border-red-200 text-red-700 flex items-center justify-center mb-3 shadow-2xs">
-              <ShieldAlert className="w-8 h-8" />
+          <div className="flex flex-col items-center text-center max-w-md animate-in fade-in duration-200">
+            <div className="w-20 h-20 rounded-3xl bg-red-100 border border-red-200 text-red-700 flex items-center justify-center mb-5 shadow-2xs">
+              <ShieldAlert className="w-10 h-10" />
             </div>
-            <h3 className="text-base font-bold text-red-700 mb-1 font-display">
+            <h3 className="text-xl font-bold text-red-800 mb-2 font-display">
               High-Risk Safety Escalation
             </h3>
-            <p className="text-xs text-gray-600 leading-relaxed mb-4">
-              MindTrauma AI has paused standard screening because immediate safety is always our first priority.
+            <p className="text-xs sm:text-sm text-gray-700 leading-relaxed mb-6">
+              MindTrauma AI has paused standard screening because your immediate personal safety is always the highest priority.
             </p>
-            <div className="w-full flex flex-col gap-2">
+            <div className="w-full flex flex-col sm:flex-row gap-3">
               <a
-                href="tel:988"
-                className="w-full py-2.5 rounded-xl bg-red-600 hover:bg-red-700 text-white font-bold text-xs flex items-center justify-center gap-1.5 shadow-xs transition-colors"
+                href="tel:14416"
+                className="flex-1 py-3 px-4 rounded-xl bg-red-600 hover:bg-red-700 text-white font-bold text-xs sm:text-sm flex items-center justify-center gap-2 shadow-xs transition-colors"
               >
                 <Phone className="w-4 h-4" />
-                <span>Dial 988 Lifeline</span>
+                <span>Tele-MANAS (14416)</span>
               </a>
               <button
                 type="button"
                 onClick={onOpenCrisis}
-                className="w-full py-2.5 rounded-xl bg-gray-100 text-gray-800 font-semibold text-xs border border-gray-200 hover:bg-gray-200 transition-colors"
+                className="flex-1 py-3 px-4 rounded-xl bg-gray-100 text-gray-800 font-semibold text-xs sm:text-sm border border-gray-200 hover:bg-gray-200 transition-colors"
               >
                 Open Crisis Hub
               </button>
@@ -101,22 +109,22 @@ export const StatesView: React.FC<StatesViewProps> = ({ onNavigate, onOpenCrisis
 
         {/* State 3: Empty History */}
         {activeState === 'empty' && (
-          <div className="flex flex-col items-center text-center max-w-sm animate-in fade-in duration-200">
-            <div className="w-16 h-16 rounded-2xl bg-gray-100 text-gray-500 flex items-center justify-center mb-3 border border-gray-200">
-              <History className="w-8 h-8" />
+          <div className="flex flex-col items-center text-center max-w-md animate-in fade-in duration-200">
+            <div className="w-20 h-20 rounded-3xl bg-gray-100 text-gray-400 flex items-center justify-center mb-5 border border-gray-200">
+              <History className="w-10 h-10" />
             </div>
-            <h3 className="text-base font-bold text-gray-900 mb-1 font-display">
-              No Assessments Yet
+            <h3 className="text-xl font-bold text-gray-950 mb-2 font-display">
+              No Previous Assessments Logged
             </h3>
-            <p className="text-xs text-gray-600 leading-relaxed mb-4">
-              You haven't completed any trauma screeners on this device. Start a 2-minute check-in to track your symptoms over time.
+            <p className="text-xs sm:text-sm text-gray-600 leading-relaxed mb-6">
+              You haven't completed any screening sessions on this device yet. Start a 2-minute clinical check-in to track your symptoms over time.
             </p>
             <button
               type="button"
               onClick={() => onNavigate('consent')}
-              className="px-6 py-2.5 rounded-xl bg-black text-white text-xs font-semibold shadow-xs hover:bg-gray-800 transition-colors flex items-center gap-1.5"
+              className="px-8 py-3 rounded-xl bg-black text-white text-xs sm:text-sm font-semibold shadow-xs hover:bg-gray-800 transition-colors flex items-center gap-2 cursor-pointer"
             >
-              <span>Start first screener</span>
+              <span>Start First Screener</span>
               <ArrowRight className="w-4 h-4" />
             </button>
           </div>
@@ -124,25 +132,25 @@ export const StatesView: React.FC<StatesViewProps> = ({ onNavigate, onOpenCrisis
 
         {/* State 4: Offline Mode */}
         {activeState === 'offline' && (
-          <div className="flex flex-col items-center text-center max-w-sm animate-in fade-in duration-200">
-            <div className="w-16 h-16 rounded-2xl bg-gray-100 border border-gray-200 text-gray-600 flex items-center justify-center mb-3">
-              <WifiOff className="w-8 h-8" />
+          <div className="flex flex-col items-center text-center max-w-md animate-in fade-in duration-200">
+            <div className="w-20 h-20 rounded-3xl bg-gray-100 border border-gray-200 text-gray-600 flex items-center justify-center mb-5">
+              <WifiOff className="w-10 h-10" />
             </div>
-            <h3 className="text-base font-bold text-gray-900 mb-1 font-display">
-              Offline Mode Active
+            <h3 className="text-xl font-bold text-gray-950 mb-2 font-display">
+              Offline Protection Active
             </h3>
-            <p className="text-xs text-gray-600 leading-relaxed mb-4">
-              Internet connection is unavailable, but your local screening engine and crisis hotlines remain fully accessible.
+            <p className="text-xs sm:text-sm text-gray-600 leading-relaxed mb-6">
+              Internet connection is unavailable, but your local clinical screening engine, somatic grounding tools, and telephone hotlines remain fully active.
             </p>
-            <div className="p-3 bg-gray-50 rounded-xl text-[11px] text-gray-500 mb-4 w-full border border-gray-200">
-              Emergency telephone hotlines (988, 911) do not require internet data connections.
+            <div className="p-4 bg-gray-50 rounded-2xl text-xs text-gray-500 mb-6 w-full border border-gray-200 text-center">
+              Emergency phone hotlines (Tele-MANAS 14416, KIRAN 1800-599-0019, Emergency 112) operate over cellular phone networks and do not require internet data.
             </div>
             <button
               type="button"
-              onClick={() => alert('Checking connection... All core screener and grounding logic runs offline.')}
-              className="px-5 py-2.5 rounded-xl bg-black text-white text-xs font-semibold shadow-xs hover:bg-gray-800 transition-colors"
+              onClick={() => alert('All core screening, scoring, and grounding exercises run entirely offline.')}
+              className="px-6 py-3 rounded-xl bg-black text-white text-xs sm:text-sm font-semibold shadow-xs hover:bg-gray-800 transition-colors cursor-pointer"
             >
-              Check Connection
+              Check Local Sync
             </button>
           </div>
         )}
