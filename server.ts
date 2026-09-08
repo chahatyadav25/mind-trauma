@@ -50,11 +50,140 @@ Take a slow, deep breath in, and let your shoulders drop as you exhale.`;
   return `Thank you for sharing that with me. Experiencing trauma reactions can feel overwhelming and isolating, but these responses are normal physiological adaptations to severe stress. What aspect of what you're feeling would be most supportive to focus on right now—understanding symptoms, practical grounding exercises, or next steps with a healthcare provider?`;
 }
 
+function getClinicalAssessmentFallback(data: {
+  traumaExposure: boolean;
+  ptsdScore: number;
+  ptsdAnswers: boolean[];
+  gad7Score: number;
+  gad7Severity: string;
+  riskLevel: string;
+}): string {
+  const { traumaExposure, ptsdScore, gad7Score, gad7Severity, riskLevel } = data;
+
+  let riskNote = '';
+  if (riskLevel === 'critical' || riskLevel === 'elevated') {
+    riskNote = `⚠️ **URGENT SAFETY NOTICE**: Elevated distress or safety concerns were indicated during triage. Immediate, compassionate support is available 24/7 across India:\n• **Tele-MANAS**: 14416 or 1800-891-4416 (Govt of India, 24/7 Toll-Free)\n• **KIRAN**: 1800-599-0019 (Ministry of Social Justice)\n• **Vandrevala Foundation**: +91 9999 666 555 (Call / WhatsApp)\n• **National Emergency**: 112\n\n`;
+  }
+
+  let traumaSection = '';
+  if (!traumaExposure) {
+    traumaSection = `• **PC-PTSD-5 Screener**: Criterion A trauma exposure was not reported. By clinical screening rules, the PTSD score is **0/5 (Negative Screen)**.`;
+  } else {
+    const isPtsdPositive = ptsdScore >= 3;
+    const isVaCutpoint = ptsdScore >= 4;
+    traumaSection = `• **PC-PTSD-5 Trauma Screener**: Score is **${ptsdScore}/5 Affirmative**. ${
+      isVaCutpoint
+        ? 'Meets the established VA research clinical cut-point (≥4) and general screening threshold (≥3), indicating prominent traumatic stress reactions requiring professional evaluation.'
+        : isPtsdPositive
+        ? 'Meets the clinical screening threshold (≥3), suggesting notable post-traumatic stress reactions over the past month.'
+        : 'Below the screening cutoff (0–2), indicating lower indication of clinical post-traumatic stress on this screen.'
+    }`;
+  }
+
+  const isGadReferral = gad7Score >= 10;
+  const gadSection = `• **GAD-7 Anxiety Scale**: Score is **${gad7Score}/21 (${gad7Severity.toUpperCase()} ANXIETY)**. ${
+    isGadReferral
+      ? 'Meets the clinical referral flag threshold (10+), indicating that generalized anxiety symptoms may be causing significant emotional or functional disruption.'
+      : 'Within the low-to-mild range, suggesting manageable baseline anxiety symptoms over the past two weeks.'
+  }`;
+
+  const pathways = `• **Evidence-Based Care Pathways**:
+  - **EMDR & Cognitive Processing Therapy (CPT)**: Recommended first-line therapies for trauma memory reprocessing and relieving intrusive thoughts.
+  - **Somatic Nervous System Regulation**: 5-4-3-2-1 sensory grounding and rhythmic box breathing help down-regulate sympathetic fight-or-flight hyperarousal.
+  - **Cognitive Behavioral Strategies**: Effective for breaking loops of uncontrollable worry, catastrophizing, and muscle tension.`;
+
+  const referral = `• **Provider Referral Guidance**:
+  Discuss these results with a licensed physician or clinical psychologist. You can share:
+  *"I completed validated PC-PTSD-5 and GAD-7 screeners. My results indicated a PTSD screen score of ${traumaExposure ? ptsdScore : 0}/5 and a GAD-7 anxiety score of ${gad7Score}/21. I would like to explore an evaluation and trauma-informed support."*`;
+
+  const disclaimer = `*Clinical Boundary: The PC-PTSD-5 and GAD-7 are screening instruments designed to identify individuals who may benefit from further evaluation. They do not constitute a formal psychiatric diagnosis. A positive screen warrants comprehensive assessment by a qualified clinician.*`;
+
+  return `${riskNote}### Comprehensive Clinical Synthesis\n\n${traumaSection}\n\n${gadSection}\n\n### Care & Treatment Pathways\n${pathways}\n\n### Next Steps & Referral\n${referral}\n\n---\n${disclaimer}`;
+}
+
 async function startServer() {
   const app = express();
   const PORT = 3000;
 
   app.use(express.json());
+
+  // AI Assessment Synthesis Endpoint (PC-PTSD-5 + GAD-7 + Risk)
+  app.post('/api/assess', async (req, res) => {
+    try {
+      const {
+        traumaExposure,
+        ptsdScore = 0,
+        ptsdAnswers = [],
+        gad7Score = 0,
+        gad7Severity = 'minimal',
+        riskLevel = 'routine'
+      } = req.body;
+
+      const fallbackText = getClinicalAssessmentFallback({
+        traumaExposure: !!traumaExposure,
+        ptsdScore: Number(ptsdScore) || 0,
+        ptsdAnswers: Array.isArray(ptsdAnswers) ? ptsdAnswers : [],
+        gad7Score: Number(gad7Score) || 0,
+        gad7Severity: String(gad7Severity),
+        riskLevel: String(riskLevel)
+      });
+
+      const apiKey = process.env.GEMINI_API_KEY;
+      if (!apiKey || apiKey === 'MY_GEMINI_API_KEY') {
+        return res.json({ summary: fallbackText, isFallback: true });
+      }
+
+      const ai = new GoogleGenAI({ apiKey });
+      const prompt = `Synthesize these clinical screening results for a victim/patient into an empathetic, structured preliminary assessment report with referral recommendations:
+- PC-PTSD-5 Criterion A Trauma Exposure: ${traumaExposure ? 'YES' : 'NO'}
+- PC-PTSD-5 PTSD Score: ${traumaExposure ? ptsdScore : 0} of 5 (Cut-point: 3+ indicates positive screen, 4 is VA research cut-point)
+- GAD-7 Anxiety Score: ${gad7Score} of 21 (Severity: ${gad7Severity}, Referral threshold: 10+)
+- Risk / Urgency Triage Level: ${riskLevel}
+
+Format requirements:
+1. Executive Clinical Synthesis (warm, validating, non-diagnostic).
+2. Trauma Symptom Profile (PC-PTSD-5 breakdown).
+3. Generalized Anxiety Profile (GAD-7 breakdown & functional impact).
+4. Evidence-Based Next Steps (EMDR, CPT, Somatic grounding, GP discussion guide).
+5. Indian Helplines (Tele-MANAS 14416, KIRAN 1800-599-0019, Vandrevala Foundation +91 9999 666 555).
+6. Mandatory Clinical Disclaimer: "The PC-PTSD-5 and GAD-7 are screening tools, not diagnostic tests; a positive result warrants further evaluation by a qualified professional." Keep concise (3-4 concise sections).`;
+
+      let response;
+      let usedModel = 'gemini-3.6-flash';
+      try {
+        response = await ai.models.generateContent({
+          model: 'gemini-3.6-flash',
+          contents: [{ role: 'user', parts: [{ text: prompt }] }],
+          config: {
+            systemInstruction: 'You are AASRA, an empathetic, trauma-informed clinical assistant synthesizing screening questionnaires for victims and survivors.'
+          }
+        });
+      } catch (err: any) {
+        usedModel = 'gemini-3.8-flash';
+        response = await ai.models.generateContent({
+          model: 'gemini-3.8-flash',
+          contents: [{ role: 'user', parts: [{ text: prompt }] }],
+          config: {
+            systemInstruction: 'You are AASRA, an empathetic, trauma-informed clinical assistant synthesizing screening questionnaires for victims and survivors.'
+          }
+        });
+      }
+
+      const summary = response.text || fallbackText;
+      res.json({ summary, isFallback: false, model: usedModel });
+    } catch (error: any) {
+      console.warn('API /api/assess error, falling back:', error?.message);
+      const fallbackText = getClinicalAssessmentFallback({
+        traumaExposure: !!req.body?.traumaExposure,
+        ptsdScore: Number(req.body?.ptsdScore) || 0,
+        ptsdAnswers: req.body?.ptsdAnswers || [],
+        gad7Score: Number(req.body?.gad7Score) || 0,
+        gad7Severity: req.body?.gad7Severity || 'minimal',
+        riskLevel: req.body?.riskLevel || 'routine'
+      });
+      res.json({ summary: fallbackText, isFallback: true });
+    }
+  });
 
   // AI Chat Endpoint with Gemini 3.8 Flash + Clinical Safe Fallback
   app.post('/api/chat', async (req, res) => {

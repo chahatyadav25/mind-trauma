@@ -36,7 +36,7 @@ export const DashboardView: React.FC<DashboardViewProps> = ({ onNavigate }) => {
             </span>
           </div>
           <h1 className="text-2xl sm:text-3xl font-bold text-gray-950 font-display">
-            Welcome back, Sarah
+            Welcome back
           </h1>
           <p className="text-xs sm:text-sm text-gray-600 mt-1">
             Your clinical screener records and coping tools are stored locally on your device with strict confidentiality.
@@ -73,7 +73,18 @@ export const DashboardView: React.FC<DashboardViewProps> = ({ onNavigate }) => {
           <div>
             <span className="text-xs text-gray-500 block">Latest PC-PTSD-5</span>
             <span className="text-sm font-bold text-gray-900 font-display block">Positive Screen</span>
-            <span className="text-[11px] text-gray-400 block mt-0.5">Oct 24 • 2 days ago</span>
+            <span className="text-[11px] text-gray-400 block mt-0.5">Oct 24 • VA Cut-point ≥4</span>
+          </div>
+        </div>
+
+        <div className="bg-white p-5 rounded-2xl border border-gray-200 shadow-2xs flex items-center gap-3.5">
+          <div className="w-13 h-13 rounded-2xl bg-purple-50 text-purple-700 flex items-center justify-center font-bold text-xl border border-purple-200 font-display shrink-0">
+            14/21
+          </div>
+          <div>
+            <span className="text-xs text-gray-500 block">Latest GAD-7</span>
+            <span className="text-sm font-bold text-gray-900 font-display block">Moderate Anxiety</span>
+            <span className="text-[11px] text-purple-700 font-medium block mt-0.5">Referral flag (≥10)</span>
           </div>
         </div>
 
@@ -84,7 +95,7 @@ export const DashboardView: React.FC<DashboardViewProps> = ({ onNavigate }) => {
           <div>
             <span className="text-xs text-gray-500 block">Primary Cluster</span>
             <span className="text-sm font-bold text-gray-900 font-display block">Hyperarousal</span>
-            <span className="text-[11px] text-teal-700 font-medium block mt-0.5">Somatic focus</span>
+            <span className="text-[11px] text-teal-700 font-medium block mt-0.5">Somatic regulation</span>
           </div>
         </div>
 
@@ -94,19 +105,8 @@ export const DashboardView: React.FC<DashboardViewProps> = ({ onNavigate }) => {
           </div>
           <div>
             <span className="text-xs text-gray-500 block">Saved Resources</span>
-            <span className="text-sm font-bold text-gray-900 font-display block">Guides &amp; Care</span>
-            <span className="text-[11px] text-sky-700 font-medium block mt-0.5">Ready offline</span>
-          </div>
-        </div>
-
-        <div className="bg-white p-5 rounded-2xl border border-gray-200 shadow-2xs flex items-center gap-3.5">
-          <div className="w-13 h-13 rounded-2xl bg-purple-50 text-purple-700 flex items-center justify-center font-bold text-xl border border-purple-100 font-display shrink-0">
-            3
-          </div>
-          <div>
-            <span className="text-xs text-gray-500 block">Reflections Logged</span>
-            <span className="text-sm font-bold text-gray-900 font-display block">Coping Sessions</span>
-            <span className="text-[11px] text-purple-700 font-medium block mt-0.5">Grounding active</span>
+            <span className="text-sm font-bold text-gray-900 font-display block">Guides &amp; Helplines</span>
+            <span className="text-[11px] text-sky-700 font-medium block mt-0.5">Tele-MANAS ready</span>
           </div>
         </div>
       </div>

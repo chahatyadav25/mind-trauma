@@ -34,9 +34,12 @@ export const ChatView: React.FC<ChatViewProps> = ({ onOpenGrounding, onOpenCrisi
   const [showCrisisBanner, setShowCrisisBanner] = useState(false);
   const chatScrollRef = useRef<HTMLDivElement>(null);
 
-  const scrollToBottom = () => {
+  const scrollToBottom = (smooth = true) => {
     if (chatScrollRef.current) {
-      chatScrollRef.current.scrollTop = chatScrollRef.current.scrollHeight;
+      chatScrollRef.current.scrollTo({
+        top: chatScrollRef.current.scrollHeight,
+        behavior: smooth ? 'smooth' : 'auto'
+      });
     }
   };
 

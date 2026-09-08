@@ -1,37 +1,142 @@
-import { Question, SymptomCluster, ResourceItem, GroundingStep, AssessmentRecord } from '../types';
+import { 
+  Question, 
+  Gad7Question, 
+  Gad7Severity, 
+  RiskLevel, 
+  SymptomCluster, 
+  ResourceItem, 
+  GroundingStep, 
+  AssessmentRecord 
+} from '../types';
+
+export const TRAUMA_EXPOSURE_QUESTION: Question = {
+  id: 0,
+  q: 'Have you ever experienced an unusually frightening, horrible, or traumatic event, such as a serious accident/fire, physical or sexual assault or abuse, natural disaster, war, witnessing someone being killed or seriously injured, or losing someone through homicide or suicide?',
+  why: 'This serves as the official PC-PTSD-5 Criterion A trauma exposure gate. In clinical practice, if someone has not experienced a qualifying traumatic stressor, the PTSD screener is scored as 0 and symptom questions are skipped.',
+  cluster: 'Trauma Exposure (Criterion A)'
+};
 
 export const PC_PTSD_5_QUESTIONS: Question[] = [
   {
     id: 1,
-    q: 'In the past month, have you had nightmares about the event(s) or thought about the event(s) when you did not want to?',
+    q: 'Had nightmares about the event(s) or thought about the event(s) when you did not want to?',
     why: 'This evaluates intrusive memories or involuntary re-experiencing, which is a hallmark indicator of post-traumatic stress.',
     cluster: 'Intrusive memories'
   },
   {
     id: 2,
-    q: 'In the past month, have you tried hard not to think about the event(s) or went out of your way to avoid situations that reminded you of the event(s)?',
+    q: 'Tried hard not to think about the event(s) or went out of your way to avoid situations that reminded you of the event(s)?',
     why: 'This screens for situational and psychological avoidance—a natural self-protective behavior that can inadvertently prolong stress.',
     cluster: 'Avoidance'
   },
   {
     id: 3,
-    q: 'In the past month, have you been constantly on guard, watchful, or easily startled?',
+    q: 'Been constantly on guard, watchful, or easily startled?',
     why: "This assesses autonomic nervous system arousal and hypervigilance, where the brain's alarm center (amygdala) remains active.",
     cluster: 'Hyperarousal & reactivity'
   },
   {
     id: 4,
-    q: 'In the past month, have you felt numb or detached from people, activities, or your surroundings?',
+    q: 'Felt numb or detached from people, activities, or your surroundings?',
     why: 'This gauges emotional blunting or depersonalization, often experienced when overwhelming emotions cause the body to numb itself.',
     cluster: 'Emotional detachment'
   },
   {
     id: 5,
-    q: 'In the past month, have you felt guilty or unable to stop blaming yourself or others for the event(s) or any problems the event(s) may have caused?',
+    q: 'Felt guilty or unable to stop blaming yourself or others for the event(s) or problems caused by the event(s)?',
     why: 'This evaluates persistent negative alterations in cognitions, moral injury, and self-blame that frequently accompany traumatic events.',
     cluster: 'Negative cognitions & guilt'
   }
 ];
+
+export const GAD_7_QUESTIONS: Gad7Question[] = [
+  {
+    id: 1,
+    q: 'Feeling nervous, anxious, or on edge',
+    why: 'Assesses psychomotor arousal, vigilance, and physical manifestations of anxiety.',
+    area: 'Nervousness & Tension'
+  },
+  {
+    id: 2,
+    q: 'Not being able to stop or control worrying',
+    why: 'Evaluates perceived loss of control over repetitive, intrusive worry processes.',
+    area: 'Uncontrollable Worry'
+  },
+  {
+    id: 3,
+    q: 'Worrying too much about different things',
+    why: 'Screens for generalized diffusion of worry across multiple life domains and scenarios.',
+    area: 'Excessive Worry'
+  },
+  {
+    id: 4,
+    q: 'Trouble relaxing',
+    why: 'Gauges baseline autonomic nervous tension and inability to settle into somatic rest.',
+    area: 'Restlessness & Inability to Relax'
+  },
+  {
+    id: 5,
+    q: 'Being so restless that it is hard to sit still',
+    why: 'Measures motor restlessness, somatic agitation, and physical release of nervous energy.',
+    area: 'Psychomotor Agitation'
+  },
+  {
+    id: 6,
+    q: 'Becoming easily annoyed or irritable',
+    why: 'Evaluates emotional reactivity, frustration tolerance, and sensory overload thresholds.',
+    area: 'Irritability'
+  },
+  {
+    id: 7,
+    q: 'Feeling afraid, as if something awful might happen',
+    why: 'Evaluates catastrophic anticipation, impending dread, and panic expectancy.',
+    area: 'Catastrophic Dread'
+  }
+];
+
+export const GAD_7_OPTIONS = [
+  { value: 0, label: 'Not at all', subtitle: '0 days' },
+  { value: 1, label: 'Several days', subtitle: '1–6 days' },
+  { value: 2, label: 'More than half the days', subtitle: '7–11 days' },
+  { value: 3, label: 'Nearly every day', subtitle: '12–14 days' }
+];
+
+export const RISK_QUESTIONS = [
+  {
+    id: 'risk-1',
+    q: 'Are you currently feeling overwhelmed, in acute distress, or having difficulty staying safe?',
+    why: 'Ensures immediate clinical safety support is prioritized before reviewing secondary evaluations.'
+  },
+  {
+    id: 'risk-2',
+    q: 'In the past two weeks, have you had thoughts of suicide, self-harm, or wishing you were not here?',
+    why: 'Direct risk screening enables immediate referral to 24/7 confidential helplines (Tele-MANAS 14416 / 112).'
+  }
+];
+
+export function calculatePcPtsd5Score(traumaExposure: boolean | null, ptsdAnswers: (boolean | null)[]): number {
+  if (traumaExposure !== true) {
+    return 0;
+  }
+  return ptsdAnswers.filter(ans => ans === true).length;
+}
+
+export function calculateGad7Score(gad7Answers: (number | null)[]): number {
+  return gad7Answers.reduce<number>((sum, val) => sum + (typeof val === 'number' ? val : 0), 0);
+}
+
+export function getGad7Severity(score: number): Gad7Severity {
+  if (score <= 4) return 'minimal';
+  if (score <= 9) return 'mild';
+  if (score <= 14) return 'moderate';
+  return 'severe';
+}
+
+export function determineRiskLevel(urgentDistress: boolean | null, selfHarmOrDanger: boolean | null): RiskLevel {
+  if (selfHarmOrDanger === true) return 'critical';
+  if (urgentDistress === true) return 'elevated';
+  return 'routine';
+}
 
 export const DSM5_CLUSTERS: SymptomCluster[] = [
   {
@@ -39,7 +144,7 @@ export const DSM5_CLUSTERS: SymptomCluster[] = [
     number: 1,
     name: 'Intrusive Memories',
     description: 'Involuntary, distressing thoughts, recurrent nightmares, or emotional flashbacks where the event feels like it is happening again in real time.',
-    screenedIn: 'Screened in Q1',
+    screenedIn: 'Screened in PC-PTSD-5 Q1',
     iconName: 'Brain'
   },
   {
@@ -47,7 +152,7 @@ export const DSM5_CLUSTERS: SymptomCluster[] = [
     number: 2,
     name: 'Avoidance',
     description: 'Deliberately avoiding thoughts, conversations, places, people, or activities that serve as painful sensory triggers of the event.',
-    screenedIn: 'Screened in Q2',
+    screenedIn: 'Screened in PC-PTSD-5 Q2',
     iconName: 'ShieldAlert'
   },
   {
@@ -55,7 +160,7 @@ export const DSM5_CLUSTERS: SymptomCluster[] = [
     number: 3,
     name: 'Hyperarousal & Reactivity',
     description: 'The nervous system stays in "fight or flight"—characterized by being easily startled, irritability, sleep disturbances, and hypervigilance.',
-    screenedIn: 'Screened in Q3',
+    screenedIn: 'Screened in PC-PTSD-5 Q3',
     iconName: 'Shield'
   },
   {
@@ -63,7 +168,7 @@ export const DSM5_CLUSTERS: SymptomCluster[] = [
     number: 4,
     name: 'Mood & Cognition Changes',
     description: 'Persistent feelings of numbness, detachment from loved ones, difficulty feeling positive emotions, or distorted self-blame and guilt.',
-    screenedIn: 'Screened in Q4 & Q5',
+    screenedIn: 'Screened in PC-PTSD-5 Q4 & Q5',
     iconName: 'HeartCrack'
   }
 ];
@@ -186,9 +291,13 @@ export const INITIAL_HISTORY: AssessmentRecord[] = [
     score: 4,
     total: 5,
     isPositive: true,
-    statusText: 'Positive Screen',
-    summary: 'Reported frequent intrusive thoughts, situational avoidance, and hypervigilance. Discussed grounding techniques in session.',
-    answers: [true, true, true, false, true]
+    statusText: 'Positive PTSD Screen',
+    summary: 'Reported Criterion A trauma exposure, intrusive memories, avoidance, and hypervigilance. GAD-7 score: 14 (Moderate Anxiety). Flagged for trauma-informed referral.',
+    answers: [true, true, true, false, true],
+    traumaExposure: true,
+    gad7Score: 14,
+    gad7Severity: 'moderate',
+    riskLevel: 'routine'
   },
   {
     id: 'rec-2',
@@ -197,8 +306,12 @@ export const INITIAL_HISTORY: AssessmentRecord[] = [
     total: 5,
     isPositive: true,
     statusText: 'Borderline Screen',
-    summary: 'Avoidance and sleep disturbances noted during high workplace stress period.',
-    answers: [true, true, true, false, false]
+    summary: 'Avoidance and hyperarousal noted during workplace transition. GAD-7 score: 8 (Mild Anxiety). Somatic grounding recommended.',
+    answers: [true, true, true, false, false],
+    traumaExposure: true,
+    gad7Score: 8,
+    gad7Severity: 'mild',
+    riskLevel: 'routine'
   }
 ];
 

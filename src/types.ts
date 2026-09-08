@@ -19,6 +19,34 @@ export interface Question {
   cluster: string;
 }
 
+export interface Gad7Question {
+  id: number;
+  q: string;
+  why: string;
+  area: string;
+}
+
+export type Gad7Severity = 'minimal' | 'mild' | 'moderate' | 'severe';
+
+export type RiskLevel = 'routine' | 'elevated' | 'critical';
+
+export interface AssessmentCompositeResult {
+  traumaExposure: boolean | null;
+  ptsdAnswers: (boolean | null)[];
+  ptsdScore: number; // 0 to 5
+  ptsdPositive: boolean; // score >= 3 (note VA cut-point is 4)
+  gad7Answers: (number | null)[]; // 7 answers (0 to 3)
+  gad7Score: number; // 0 to 21
+  gad7Severity: Gad7Severity;
+  gad7NeedsReferral: boolean; // score >= 10
+  riskLevel: RiskLevel;
+  riskAnswers: {
+    urgentDistress: boolean | null;
+    selfHarmOrDanger: boolean | null;
+  };
+  aiSummary?: string;
+}
+
 export interface SymptomCluster {
   id: string;
   number: number;
@@ -44,12 +72,16 @@ export interface ResourceItem {
 export interface AssessmentRecord {
   id: string;
   date: string;
-  score: number;
+  score: number; // PC-PTSD-5 score
   total: number;
   isPositive: boolean;
   statusText: string;
   summary: string;
   answers: (boolean | null)[];
+  traumaExposure?: boolean;
+  gad7Score?: number;
+  gad7Severity?: Gad7Severity;
+  riskLevel?: RiskLevel;
 }
 
 export interface ChatMessage {

@@ -1,15 +1,20 @@
 import React, { useState } from 'react';
 import { ViewId, AssessmentRecord } from '../types';
-import { INITIAL_HISTORY } from '../data/screeningData';
-import { FileDown, Calendar, ArrowRight, Trash2, ShieldCheck, PlusCircle } from 'lucide-react';
+import { FileDown, Calendar, ArrowRight, Trash2, ShieldCheck, PlusCircle, Activity } from 'lucide-react';
 
 interface HistoryViewProps {
+  historyList: AssessmentRecord[];
+  onClearHistory: () => void;
   onNavigate: (view: ViewId) => void;
-  onInspectRecord: (score: number) => void;
+  onInspectRecord: (rec: AssessmentRecord) => void;
 }
 
-export const HistoryView: React.FC<HistoryViewProps> = ({ onNavigate, onInspectRecord }) => {
-  const [historyList, setHistoryList] = useState<AssessmentRecord[]>(INITIAL_HISTORY);
+export const HistoryView: React.FC<HistoryViewProps> = ({ 
+  historyList,
+  onClearHistory,
+  onNavigate, 
+  onInspectRecord 
+}) => {
   const [showExportBanner, setShowExportBanner] = useState(false);
 
   const handleExportPdf = () => {
@@ -19,9 +24,9 @@ export const HistoryView: React.FC<HistoryViewProps> = ({ onNavigate, onInspectR
     }, 400);
   };
 
-  const handleClearHistory = () => {
+  const handleConfirmClear = () => {
     if (window.confirm('Are you sure you want to securely clear your clinical screening history from this browser?')) {
-      setHistoryList([]);
+      onClearHistory();
     }
   };
 
@@ -35,7 +40,7 @@ export const HistoryView: React.FC<HistoryViewProps> = ({ onNavigate, onInspectR
             </span>
             <span className="text-gray-300">•</span>
             <span className="text-xs text-teal-800 bg-teal-50 px-2.5 py-0.5 rounded-full border border-teal-200/60 font-medium">
-              PC-PTSD-5 Longitudinal Logs
+              PC-PTSD-5 &amp; GAD-7 Longitudinal Logs
             </span>
           </div>
           <h1 className="text-2xl sm:text-3xl font-bold text-gray-950 font-display">
@@ -72,7 +77,7 @@ export const HistoryView: React.FC<HistoryViewProps> = ({ onNavigate, onInspectR
           <span>Preparing printable clinical summary for healthcare provider discussion...</span>
           <button
             onClick={() => setShowExportBanner(false)}
-            className="text-teal-800 font-bold underline hover:text-teal-950 ml-4"
+            className="text-teal-800 font-bold underline hover:text-teal-950 ml-4 cursor-pointer"
           >
             Dismiss
           </button>
@@ -87,8 +92,8 @@ export const HistoryView: React.FC<HistoryViewProps> = ({ onNavigate, onInspectR
               className="bg-white p-6 rounded-3xl border border-gray-200 shadow-2xs hover:shadow-xs transition-shadow flex flex-col justify-between"
             >
               <div>
-                <div className="flex items-center justify-between mb-3">
-                  <div className="flex items-center gap-2">
+                <div className="flex flex-wrap items-center justify-between gap-2 mb-3">
+                  <div className="flex flex-wrap items-center gap-2">
                     <span
                       className={`px-3 py-1 rounded-full text-xs font-bold font-display ${
                         rec.score >= 3
@@ -96,27 +101,35 @@ export const HistoryView: React.FC<HistoryViewProps> = ({ onNavigate, onInspectR
                           : 'bg-teal-50 text-teal-800 border border-teal-100'
                       }`}
                     >
-                      Score: {rec.score} / {rec.total}
+                      PTSD: {rec.score} / {rec.total}
                     </span>
-                    <span className="text-xs font-bold text-gray-900 font-display">{rec.statusText}</span>
+
+                    {typeof rec.gad7Score === 'number' && (
+                      <span className="px-3 py-1 rounded-full text-xs font-bold font-display bg-purple-50 text-purple-900 border border-purple-200 flex items-center gap-1">
+                        <Activity className="w-3 h-3 text-purple-600" />
+                        <span>GAD-7: {rec.gad7Score}/21</span>
+                      </span>
+                    )}
                   </div>
+
                   <div className="flex items-center gap-1.5 text-xs text-gray-500 font-medium">
                     <Calendar className="w-3.5 h-3.5 text-gray-400" />
                     <span>{rec.date}</span>
                   </div>
                 </div>
 
+                <span className="text-xs font-bold text-gray-900 font-display block mb-1.5">
+                  {rec.statusText}
+                </span>
+
                 <p className="text-xs sm:text-sm text-gray-600 mb-4 leading-relaxed">{rec.summary}</p>
               </div>
 
               <div className="flex items-center justify-between text-xs pt-3 border-t border-gray-100">
-                <span className="text-gray-400 font-medium">PC-PTSD-5 (DSM-5)</span>
+                <span className="text-gray-400 font-medium">PC-PTSD-5 &amp; GAD-7</span>
                 <button
                   type="button"
-                  onClick={() => {
-                    onInspectRecord(rec.score);
-                    onNavigate('results');
-                  }}
+                  onClick={() => onInspectRecord(rec)}
                   className="text-black font-semibold hover:underline inline-flex items-center gap-1 cursor-pointer"
                 >
                   <span>View Full Clinical Result</span>
@@ -131,7 +144,7 @@ export const HistoryView: React.FC<HistoryViewProps> = ({ onNavigate, onInspectR
           <p className="text-sm text-gray-500 mb-4">All screening records have been securely cleared from local storage.</p>
           <button
             onClick={() => onNavigate('consent')}
-            className="px-6 py-3 bg-black text-white text-xs sm:text-sm font-semibold rounded-xl hover:bg-gray-800 transition-colors"
+            className="px-6 py-3 bg-black text-white text-xs sm:text-sm font-semibold rounded-xl hover:bg-gray-800 transition-colors cursor-pointer"
           >
             Start a new assessment
           </button>
@@ -147,7 +160,7 @@ export const HistoryView: React.FC<HistoryViewProps> = ({ onNavigate, onInspectR
 
         {historyList.length > 0 && (
           <button
-            onClick={handleClearHistory}
+            onClick={handleConfirmClear}
             className="text-red-600 hover:text-red-700 font-semibold underline inline-flex items-center gap-1 cursor-pointer"
           >
             <Trash2 className="w-3.5 h-3.5" />
