@@ -1,17 +1,22 @@
 import React, { useState, useEffect } from 'react';
-import { ViewId, AssessmentCompositeResult, AssessmentRecord } from './types';
+import { ViewId, AssessmentCompositeResult, AssessmentRecord, DailyCheckIn } from './types';
 import { 
   calculatePcPtsd5Score, 
   calculateGad7Score, 
   getGad7Severity, 
   determineRiskLevel, 
-  INITIAL_HISTORY 
+  INITIAL_HISTORY,
+  loadStoredCheckIns,
+  saveStoredCheckIns,
+  formatDateKey
 } from './data/screeningData';
 
 import { Header } from './components/Header';
 import { BottomNav } from './components/BottomNav';
 import { CrisisModal } from './components/CrisisModal';
 import { GroundingModal } from './components/GroundingModal';
+import { DailyCheckInModal } from './components/DailyCheckInModal';
+import { PreviousCheckInsModal } from './components/PreviousCheckInsModal';
 
 import { LandingView } from './views/LandingView';
 import { ConsentView } from './views/ConsentView';
@@ -40,6 +45,23 @@ export default function App() {
 
   // Saved Screening History
   const [historyList, setHistoryList] = useState<AssessmentRecord[]>(INITIAL_HISTORY);
+
+  // Daily Check-ins State (persisted locally)
+  const [checkIns, setCheckIns] = useState<DailyCheckIn[]>(() => loadStoredCheckIns());
+  const [isCheckInModalOpen, setIsCheckInModalOpen] = useState<boolean>(false);
+  const [isPreviousCheckInsModalOpen, setIsPreviousCheckInsModalOpen] = useState<boolean>(false);
+
+  const handleSaveCheckIn = (newCheckIn: DailyCheckIn) => {
+    setCheckIns(prev => {
+      const filtered = prev.filter(c => c.date !== newCheckIn.date);
+      const updated = [newCheckIn, ...filtered];
+      saveStoredCheckIns(updated);
+      return updated;
+    });
+  };
+
+  const todayKey = formatDateKey(new Date());
+  const todayCheckIn = checkIns.find(c => c.date === todayKey);
 
   // Computed / Current Composite Assessment Result
   const [currentAssessment, setCurrentAssessment] = useState<AssessmentCompositeResult>({
@@ -249,7 +271,14 @@ export default function App() {
           )}
 
           {currentView === 'dashboard' && (
-            <DashboardView onNavigate={handleNavigate} />
+            <DashboardView 
+              onNavigate={handleNavigate}
+              checkIns={checkIns}
+              onOpenCheckIn={() => setIsCheckInModalOpen(true)}
+              onOpenPreviousCheckIns={() => setIsPreviousCheckInsModalOpen(true)}
+              onOpenGrounding={() => setIsGroundingModalOpen(true)}
+              onOpenCrisis={() => setIsCrisisModalOpen(true)}
+            />
           )}
 
           {currentView === 'history' && (
@@ -258,6 +287,8 @@ export default function App() {
               onClearHistory={() => setHistoryList([])}
               onNavigate={handleNavigate}
               onInspectRecord={handleInspectRecord}
+              checkIns={checkIns}
+              onOpenCheckIn={() => setIsCheckInModalOpen(true)}
             />
           )}
 
@@ -283,6 +314,37 @@ export default function App() {
       <GroundingModal
         isOpen={isGroundingModalOpen}
         onClose={() => setIsGroundingModalOpen(false)}
+      />
+
+      {/* Daily Mood & Wellbeing Check-in Modal */}
+      <DailyCheckInModal
+        isOpen={isCheckInModalOpen}
+        onClose={() => setIsCheckInModalOpen(false)}
+        onSave={handleSaveCheckIn}
+        todayCheckIn={todayCheckIn}
+        onOpenGrounding={() => {
+          setIsCheckInModalOpen(false);
+          setIsGroundingModalOpen(true);
+        }}
+        onOpenCrisis={() => {
+          setIsCheckInModalOpen(false);
+          setIsCrisisModalOpen(true);
+        }}
+        onOpenChat={() => {
+          setIsCheckInModalOpen(false);
+          handleNavigate('chat');
+        }}
+      />
+
+      {/* Previous Daily Check-ins History Modal */}
+      <PreviousCheckInsModal
+        isOpen={isPreviousCheckInsModalOpen}
+        onClose={() => setIsPreviousCheckInsModalOpen(false)}
+        checkIns={checkIns}
+        onOpenCheckIn={() => {
+          setIsPreviousCheckInsModalOpen(false);
+          setIsCheckInModalOpen(true);
+        }}
       />
     </div>
   );

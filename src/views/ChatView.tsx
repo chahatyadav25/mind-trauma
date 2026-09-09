@@ -1,18 +1,27 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { ChatMessage } from '../types';
+import { ChatMessage, ChatSession } from '../types';
+import {
+  loadActiveChatSession,
+  saveActiveChatSession,
+  createInitialChatSession,
+  autoGenerateTitle,
+  formatSessionDateTime
+} from '../utils/chatStorage';
+import { ChatHistoryModal } from '../components/ChatHistoryModal';
 import { 
   Bot, 
   RotateCcw, 
   Send, 
   Sparkles, 
-  Mic, 
   AlertTriangle, 
   Phone, 
-  MessageSquare,
   Wind,
-  ShieldCheck,
+  ShieldCheck, 
   ChevronRight,
-  HelpCircle
+  History,
+  PlusCircle,
+  Lock,
+  MessageSquare
 } from 'lucide-react';
 
 interface ChatViewProps {
@@ -21,18 +30,15 @@ interface ChatViewProps {
 }
 
 export const ChatView: React.FC<ChatViewProps> = ({ onOpenGrounding, onOpenCrisis }) => {
-  const [messages, setMessages] = useState<ChatMessage[]>([
-    {
-      id: 'welcome',
-      sender: 'assistant',
-      text: "Hello. I'm AASRA, your trauma-informed psychoeducational companion. I'm here to offer supportive guidance, explain clinical terms, and guide you through calming grounding practices.\n\nWhat would feel most helpful for you to explore right now?",
-      timestamp: 'Just now'
-    }
-  ]);
+  // Active conversation session persisted to localStorage
+  const [session, setSession] = useState<ChatSession>(() => loadActiveChatSession());
   const [inputValue, setInputValue] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [showCrisisBanner, setShowCrisisBanner] = useState(false);
+  const [isHistoryModalOpen, setIsHistoryModalOpen] = useState(false);
   const chatScrollRef = useRef<HTMLDivElement>(null);
+
+  const messages = session.messages;
 
   const scrollToBottom = (smooth = true) => {
     if (chatScrollRef.current) {
@@ -47,6 +53,15 @@ export const ChatView: React.FC<ChatViewProps> = ({ onOpenGrounding, onOpenCrisi
     scrollToBottom();
   }, [messages, isLoading, showCrisisBanner]);
 
+  // Persist session whenever it changes
+  const updateSessionAndPersist = (updater: (prev: ChatSession) => ChatSession) => {
+    setSession(prev => {
+      const updated = updater(prev);
+      saveActiveChatSession(updated);
+      return updated;
+    });
+  };
+
   const handleSendMessage = async (textToSend?: string) => {
     const messageText = (textToSend || inputValue).trim();
     if (!messageText || isLoading) return;
@@ -58,7 +73,20 @@ export const ChatView: React.FC<ChatViewProps> = ({ onOpenGrounding, onOpenCrisi
       timestamp: 'Just now'
     };
 
-    setMessages(prev => [...prev, userMsg]);
+    // Append user message & update title if default
+    let updatedMsgs = [...messages, userMsg];
+    updateSessionAndPersist(prev => {
+      const newTitle = prev.title === 'New Consultation'
+        ? autoGenerateTitle(updatedMsgs)
+        : prev.title;
+      return {
+        ...prev,
+        title: newTitle,
+        updatedAt: Date.now(),
+        messages: updatedMsgs
+      };
+    });
+
     if (!textToSend) setInputValue('');
 
     // Check distress keywords
@@ -75,7 +103,7 @@ export const ChatView: React.FC<ChatViewProps> = ({ onOpenGrounding, onOpenCrisi
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           message: messageText,
-          history: messages.slice(-6).map(m => ({
+          history: updatedMsgs.slice(-6).map(m => ({
             sender: m.sender,
             text: m.text
           }))
@@ -91,7 +119,11 @@ export const ChatView: React.FC<ChatViewProps> = ({ onOpenGrounding, onOpenCrisi
         isFallback: data.isFallback
       };
 
-      setMessages(prev => [...prev, assistantReply]);
+      updateSessionAndPersist(prev => ({
+        ...prev,
+        updatedAt: Date.now(),
+        messages: [...prev.messages, assistantReply]
+      }));
     } catch (err) {
       console.warn('Chat request failed, using client fallback:', err);
       const fallbackReply: ChatMessage = {
@@ -100,7 +132,12 @@ export const ChatView: React.FC<ChatViewProps> = ({ onOpenGrounding, onOpenCrisi
         text: "I'm right here with you. Processing past stress and difficult memories takes time and kindness toward yourself. Would you like to practice a quick grounding technique or learn about how trauma affects the body?",
         timestamp: 'Just now'
       };
-      setMessages(prev => [...prev, fallbackReply]);
+
+      updateSessionAndPersist(prev => ({
+        ...prev,
+        updatedAt: Date.now(),
+        messages: [...prev.messages, fallbackReply]
+      }));
     } finally {
       setIsLoading(false);
     }
@@ -125,18 +162,40 @@ export const ChatView: React.FC<ChatViewProps> = ({ onOpenGrounding, onOpenCrisi
       text: "⚠️ Your safety is the highest priority. If you or someone you know is experiencing acute distress in India, please call Tele-MANAS (14416 / 1800-891-4416), KIRAN (1800-599-0019), Vandrevala Foundation (+91 9999 666 555), or National Emergency (112).",
       timestamp: 'Just now'
     };
-    setMessages(prev => [...prev, alertMsg]);
+
+    updateSessionAndPersist(prev => ({
+      ...prev,
+      updatedAt: Date.now(),
+      messages: [...prev.messages, alertMsg]
+    }));
   };
 
   const handleClearChat = () => {
-    setMessages([
-      {
-        id: 'reset',
-        sender: 'assistant',
-        text: "Chat history cleared. I'm here whenever you're ready to explore symptoms, talk through your screener, or practice grounding exercises.",
-        timestamp: 'Just now'
-      }
-    ]);
+    const clearedMsg: ChatMessage = {
+      id: 'reset',
+      sender: 'assistant',
+      text: "Chat history cleared for this session. I'm here whenever you're ready to explore symptoms, talk through your screener, or practice grounding exercises.",
+      timestamp: 'Just now'
+    };
+
+    updateSessionAndPersist(prev => ({
+      ...prev,
+      updatedAt: Date.now(),
+      messages: [clearedMsg]
+    }));
+    setShowCrisisBanner(false);
+  };
+
+  const handleStartNewChat = () => {
+    const fresh = createInitialChatSession();
+    setSession(fresh);
+    saveActiveChatSession(fresh);
+    setShowCrisisBanner(false);
+  };
+
+  const handleSelectSessionFromHistory = (selected: ChatSession) => {
+    setSession(selected);
+    saveActiveChatSession(selected);
     setShowCrisisBanner(false);
   };
 
@@ -173,6 +232,49 @@ export const ChatView: React.FC<ChatViewProps> = ({ onOpenGrounding, onOpenCrisi
                 <span>Clinical Boundaries</span>
               </div>
               <p>Not a licensed therapist or emergency medical service. Does not provide clinical diagnoses.</p>
+            </div>
+          </div>
+
+          {/* Secure Chat History & Sessions Card */}
+          <div className="bg-white p-4 rounded-3xl border border-gray-200 shadow-2xs">
+            <div className="flex items-center justify-between mb-2.5">
+              <span className="text-xs font-bold text-gray-900 font-display flex items-center gap-1.5">
+                <History className="w-4 h-4 text-teal-700" />
+                <span>Chat History &amp; Privacy</span>
+              </span>
+              <span className="text-[10px] px-2 py-0.5 rounded-full bg-teal-50 text-teal-800 font-semibold border border-teal-200/60 flex items-center gap-1">
+                <Lock className="w-2.5 h-2.5" />
+                <span>PIN Protected</span>
+              </span>
+            </div>
+            
+            <div className="mb-3 px-3 py-2 rounded-xl bg-gray-50 border border-gray-100 text-[11px] text-gray-600">
+              <div className="font-semibold text-gray-900 truncate">
+                {session.title}
+              </div>
+              <div className="text-[10px] text-gray-400 mt-0.5">
+                Last updated {formatSessionDateTime(session.updatedAt)}
+              </div>
+            </div>
+
+            <div className="grid grid-cols-2 gap-2">
+              <button
+                type="button"
+                onClick={() => setIsHistoryModalOpen(true)}
+                className="py-2 px-3 rounded-xl bg-teal-700 hover:bg-teal-800 text-white text-xs font-semibold transition-colors flex items-center justify-center gap-1.5 shadow-2xs cursor-pointer"
+              >
+                <History className="w-3.5 h-3.5" />
+                <span>Chat History</span>
+              </button>
+
+              <button
+                type="button"
+                onClick={handleStartNewChat}
+                className="py-2 px-3 rounded-xl bg-gray-100 hover:bg-gray-200 text-gray-800 text-xs font-semibold transition-colors flex items-center justify-center gap-1.5 cursor-pointer border border-gray-200"
+              >
+                <PlusCircle className="w-3.5 h-3.5 text-gray-600" />
+                <span>New Chat</span>
+              </button>
             </div>
           </div>
 
@@ -250,39 +352,63 @@ export const ChatView: React.FC<ChatViewProps> = ({ onOpenGrounding, onOpenCrisi
         {/* Right Main Chat Console: Desktop Chat Workspace (8 cols) */}
         <div className="lg:col-span-8 flex flex-col bg-white rounded-3xl border border-gray-200 shadow-xs overflow-hidden h-full">
           {/* Header Bar */}
-          <div className="p-4 border-b border-gray-100 flex items-center justify-between bg-white shrink-0">
-            <div className="flex items-center gap-3">
+          <div className="p-3.5 sm:p-4 border-b border-gray-100 flex items-center justify-between bg-white shrink-0">
+            <div className="flex items-center gap-3 min-w-0">
               <div className="w-9 h-9 rounded-xl bg-teal-50 text-teal-700 flex items-center justify-center border border-teal-200 shrink-0">
                 <Bot className="w-5 h-5" />
               </div>
-              <div>
-                <h3 className="text-sm font-bold text-gray-900 font-display flex items-center gap-1.5">
-                  AASRA Consultation Stream
-                  <span className="text-[10px] font-semibold text-teal-700 bg-teal-50 px-2 py-0.5 rounded-full border border-teal-200/60 flex items-center gap-1">
+              <div className="min-w-0">
+                <h3 className="text-xs sm:text-sm font-bold text-gray-900 font-display flex items-center gap-1.5 truncate">
+                  <span className="truncate">{session.title}</span>
+                  <span className="text-[10px] font-semibold text-teal-700 bg-teal-50 px-2 py-0.5 rounded-full border border-teal-200/60 hidden sm:flex items-center gap-1 shrink-0">
                     <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
-                    AASRA Active
+                    Active
                   </span>
                 </h3>
-                <span className="text-[11px] text-gray-500">
-                  Empathetic Psychoeducational Support • Confidential
+                <span className="text-[11px] text-gray-500 hidden sm:inline-block">
+                  Empathetic Psychoeducational Support • Client Encrypted
                 </span>
               </div>
             </div>
 
-            <div className="flex items-center gap-2">
+            <div className="flex items-center gap-1.5 sm:gap-2 shrink-0">
+              {/* Chat History Trigger */}
+              <button
+                type="button"
+                onClick={() => setIsHistoryModalOpen(true)}
+                className="px-2.5 sm:px-3 py-1.5 rounded-xl bg-gray-100 hover:bg-teal-50 hover:text-teal-900 border border-gray-200 text-xs font-semibold flex items-center gap-1.5 transition-colors cursor-pointer"
+                title="View previous conversations (PIN protected)"
+              >
+                <History className="w-3.5 h-3.5 text-teal-700" />
+                <span className="hidden xs:inline">Chat History</span>
+              </button>
+
+              {/* New Chat Button */}
+              <button
+                type="button"
+                onClick={handleStartNewChat}
+                className="p-2 rounded-xl text-gray-600 hover:text-teal-900 hover:bg-teal-50 border border-gray-200 transition-colors cursor-pointer"
+                title="Start a new conversation"
+              >
+                <PlusCircle className="w-4 h-4" />
+              </button>
+
+              {/* Mobile Grounding Quick Trigger */}
               <button
                 type="button"
                 onClick={onOpenGrounding}
-                className="lg:hidden px-3 py-1.5 rounded-xl bg-teal-50 text-teal-800 text-xs font-semibold border border-teal-200/80 flex items-center gap-1"
+                className="lg:hidden px-2.5 py-1.5 rounded-xl bg-teal-50 text-teal-800 text-xs font-semibold border border-teal-200/80 flex items-center gap-1"
+                title="Grounding"
               >
                 <Wind className="w-3.5 h-3.5" />
-                <span>Grounding</span>
+                <span className="hidden sm:inline">Grounding</span>
               </button>
 
+              {/* Reset / Clear Session */}
               <button
                 type="button"
                 onClick={handleClearChat}
-                className="p-2 rounded-xl text-gray-400 hover:text-gray-900 hover:bg-gray-100 transition-colors"
+                className="p-2 rounded-xl text-gray-400 hover:text-gray-900 hover:bg-gray-100 transition-colors cursor-pointer"
                 title="Reset conversation"
               >
                 <RotateCcw className="w-4 h-4" />
@@ -319,7 +445,7 @@ export const ChatView: React.FC<ChatViewProps> = ({ onOpenGrounding, onOpenCrisi
                     <button
                       type="button"
                       onClick={() => setShowCrisisBanner(false)}
-                      className="px-3 py-1.5 rounded-xl bg-gray-100 text-gray-700 text-xs font-medium hover:bg-gray-200 border border-gray-200"
+                      className="px-3 py-1.5 rounded-xl bg-gray-100 text-gray-700 text-xs font-medium hover:bg-gray-200 border border-gray-200 cursor-pointer"
                     >
                       Dismiss
                     </button>
@@ -386,28 +512,28 @@ export const ChatView: React.FC<ChatViewProps> = ({ onOpenGrounding, onOpenCrisi
             <button
               type="button"
               onClick={() => handleQuickReply('Explain my screening score')}
-              className="px-3 py-1 rounded-full bg-gray-100 text-gray-800 text-xs font-semibold whitespace-nowrap hover:bg-gray-200 transition-colors shrink-0"
+              className="px-3 py-1 rounded-full bg-gray-100 text-gray-800 text-xs font-semibold whitespace-nowrap hover:bg-gray-200 transition-colors shrink-0 cursor-pointer"
             >
               Explain score
             </button>
             <button
               type="button"
               onClick={() => handleQuickReply('What is hyperarousal?')}
-              className="px-3 py-1 rounded-full bg-gray-100 text-gray-800 text-xs font-semibold whitespace-nowrap hover:bg-gray-200 transition-colors shrink-0"
+              className="px-3 py-1 rounded-full bg-gray-100 text-gray-800 text-xs font-semibold whitespace-nowrap hover:bg-gray-200 transition-colors shrink-0 cursor-pointer"
             >
               Hyperarousal
             </button>
             <button
               type="button"
               onClick={onOpenGrounding}
-              className="px-3 py-1 rounded-full bg-teal-50 text-teal-800 text-xs font-semibold whitespace-nowrap hover:bg-teal-100 transition-colors shrink-0"
+              className="px-3 py-1 rounded-full bg-teal-50 text-teal-800 text-xs font-semibold whitespace-nowrap hover:bg-teal-100 transition-colors shrink-0 cursor-pointer"
             >
               🌿 Grounding
             </button>
             <button
               type="button"
               onClick={() => handleQuickReply('How to talk to a doctor')}
-              className="px-3 py-1 rounded-full bg-gray-100 text-gray-800 text-xs font-semibold whitespace-nowrap hover:bg-gray-200 transition-colors shrink-0"
+              className="px-3 py-1 rounded-full bg-gray-100 text-gray-800 text-xs font-semibold whitespace-nowrap hover:bg-gray-200 transition-colors shrink-0 cursor-pointer"
             >
               Talk to doctor
             </button>
@@ -419,7 +545,7 @@ export const ChatView: React.FC<ChatViewProps> = ({ onOpenGrounding, onOpenCrisi
               <button
                 type="button"
                 onClick={onOpenGrounding}
-                className="p-2 text-gray-500 hover:text-teal-700 hover:bg-teal-50 transition-colors rounded-xl shrink-0"
+                className="p-2 text-gray-500 hover:text-teal-700 hover:bg-teal-50 transition-colors rounded-xl shrink-0 cursor-pointer"
                 title="Somatic Grounding Guide"
               >
                 <Sparkles className="w-5 h-5" />
@@ -450,15 +576,28 @@ export const ChatView: React.FC<ChatViewProps> = ({ onOpenGrounding, onOpenCrisi
             </div>
             <div className="flex items-center justify-between text-[11px] text-gray-400 px-2 mt-2">
               <span>Press Enter to send message</span>
-              <span className="flex items-center gap-1">
+              <button
+                type="button"
+                onClick={() => setIsHistoryModalOpen(true)}
+                className="flex items-center gap-1 text-teal-700 hover:text-teal-900 hover:underline cursor-pointer"
+              >
                 <ShieldCheck className="w-3.5 h-3.5 text-teal-600" />
-                Zero data retention
-              </span>
+                <span>Encrypted local storage • View History</span>
+              </button>
             </div>
           </div>
         </div>
 
       </div>
+
+      {/* Secure Chat History Modal */}
+      <ChatHistoryModal
+        isOpen={isHistoryModalOpen}
+        onClose={() => setIsHistoryModalOpen(false)}
+        activeSession={session}
+        onSelectSession={handleSelectSessionFromHistory}
+        onNewChat={handleStartNewChat}
+      />
     </div>
   );
 };

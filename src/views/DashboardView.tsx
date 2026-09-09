@@ -1,5 +1,13 @@
 import React from 'react';
-import { ViewId } from '../types';
+import { ViewId, DailyCheckIn } from '../types';
+import { 
+  getCurrentWeekDays, 
+  formatDateKey, 
+  formatDisplayDate, 
+  MOOD_OPTIONS, 
+  isCheckInSupportNeeded 
+} from '../data/screeningData';
+import { WeeklyMoodGraph } from '../components/WeeklyMoodGraph';
 import { 
   PlusCircle, 
   History, 
@@ -12,14 +20,52 @@ import {
   PhoneCall,
   Activity,
   Calendar,
-  FileSpreadsheet
+  Heart,
+  Edit3,
+  Clock,
+  Sparkles
 } from 'lucide-react';
 
 interface DashboardViewProps {
   onNavigate: (view: ViewId) => void;
+  checkIns: DailyCheckIn[];
+  onOpenCheckIn: () => void;
+  onOpenPreviousCheckIns: () => void;
+  onOpenGrounding?: () => void;
+  onOpenCrisis?: () => void;
 }
 
-export const DashboardView: React.FC<DashboardViewProps> = ({ onNavigate }) => {
+export const DashboardView: React.FC<DashboardViewProps> = ({ 
+  onNavigate,
+  checkIns,
+  onOpenCheckIn,
+  onOpenPreviousCheckIns,
+  onOpenGrounding,
+  onOpenCrisis
+}) => {
+  const todayKey = formatDateKey(new Date());
+  const todayCheckIn = checkIns.find(c => c.date === todayKey);
+  const weeklyDays = getCurrentWeekDays(checkIns, new Date());
+
+  // Compute weekly statistics
+  const recordedWeeklyDays = weeklyDays.filter(d => d.checkIn);
+  const numericScores = recordedWeeklyDays
+    .map(d => d.checkIn?.mood)
+    .filter((m): m is 1 | 2 | 3 | 4 | 5 => typeof m === 'number');
+
+  const avgMoodScore = numericScores.length > 0 
+    ? (numericScores.reduce((a, b) => a + b, 0) / numericScores.length).toFixed(1)
+    : null;
+
+  const latestCheckIn = checkIns.length > 0 
+    ? [...checkIns].sort((a, b) => b.timestamp - a.timestamp)[0] 
+    : undefined;
+
+  const latestNeedsSupport = latestCheckIn ? isCheckInSupportNeeded(latestCheckIn) : false;
+
+  const firstDay = weeklyDays[0];
+  const lastDay = weeklyDays[6];
+  const weekSpanText = `${firstDay.dayName}, ${firstDay.dateStr} – ${lastDay.dayName}, ${lastDay.dateStr}`;
   return (
     <div className="flex flex-col w-full max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
       {/* Welcome Top Banner */}
@@ -109,6 +155,128 @@ export const DashboardView: React.FC<DashboardViewProps> = ({ onNavigate }) => {
             <span className="text-[11px] text-sky-700 font-medium block mt-0.5">Tele-MANAS ready</span>
           </div>
         </div>
+      </div>
+
+      {/* Weekly Mood Trend Section */}
+      <div className="bg-white p-6 sm:p-7 rounded-3xl border border-gray-200 shadow-2xs mb-6">
+        <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-5 pb-4 border-b border-gray-100">
+          <div>
+            <div className="flex items-center gap-2 mb-1">
+              <span className="text-xs text-teal-800 font-bold uppercase tracking-wider font-display flex items-center gap-1.5">
+                <Heart className="w-3.5 h-3.5 text-teal-600" />
+                Longitudinal Reflection
+              </span>
+              <span className="text-gray-300">•</span>
+              <span className="text-xs text-gray-500 font-medium">
+                {weekSpanText}
+              </span>
+            </div>
+            <h2 className="text-xl sm:text-2xl font-bold text-gray-950 font-display">
+              Weekly Mood &amp; Wellbeing Trend
+            </h2>
+            <p className="text-xs sm:text-sm text-gray-600 mt-0.5">
+              Daily check-ins tracking your emotional states throughout the current week. Missing days are unrecorded without guesswork.
+            </p>
+          </div>
+
+          <div className="flex flex-wrap items-center gap-2.5 shrink-0">
+            {todayCheckIn ? (
+              <div className="flex items-center gap-2">
+                <span className="px-3 py-1.5 rounded-xl bg-teal-50 border border-teal-200/80 text-xs font-semibold text-teal-900 flex items-center gap-1.5">
+                  <Check className="w-3.5 h-3.5 text-teal-700" />
+                  <span>Logged Today ({todayCheckIn.mood !== null ? `${todayCheckIn.mood}/5` : 'Recorded'})</span>
+                </span>
+                <button
+                  type="button"
+                  onClick={onOpenCheckIn}
+                  className="px-3 py-1.5 rounded-xl bg-gray-100 hover:bg-gray-200 text-gray-800 text-xs font-semibold transition-colors flex items-center gap-1.5 cursor-pointer"
+                  title="Update today's responses"
+                >
+                  <Edit3 className="w-3.5 h-3.5" />
+                  <span>Update</span>
+                </button>
+              </div>
+            ) : (
+              <button
+                type="button"
+                onClick={onOpenCheckIn}
+                className="px-4 py-2 rounded-xl bg-teal-700 hover:bg-teal-800 text-white text-xs sm:text-sm font-semibold shadow-xs transition-colors flex items-center gap-1.5 cursor-pointer"
+              >
+                <PlusCircle className="w-4 h-4" />
+                <span>Daily Check-in</span>
+              </button>
+            )}
+
+            <button
+              type="button"
+              onClick={onOpenPreviousCheckIns}
+              className="px-3.5 py-2 rounded-xl bg-white border border-gray-200 hover:bg-gray-50 text-gray-700 text-xs sm:text-sm font-semibold transition-colors shadow-2xs flex items-center gap-1.5 cursor-pointer"
+            >
+              <History className="w-3.5 h-3.5 text-gray-500" />
+              <span>History</span>
+            </button>
+          </div>
+        </div>
+
+        {/* Weekly Mood SVG Graph */}
+        <WeeklyMoodGraph days={weeklyDays} onOpenCheckIn={onOpenCheckIn} />
+
+        {/* Weekly Summary Highlights Strip */}
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 mt-5 pt-4 border-t border-gray-100 text-xs">
+          <div className="bg-gray-50/80 p-3 rounded-xl border border-gray-100 flex items-center justify-between">
+            <span className="text-gray-500">Check-in Consistency</span>
+            <span className="font-bold text-gray-900 font-display">
+              {recordedWeeklyDays.length} / 7 Days Logged
+            </span>
+          </div>
+
+          <div className="bg-gray-50/80 p-3 rounded-xl border border-gray-100 flex items-center justify-between">
+            <span className="text-gray-500">Average Mood (1–5)</span>
+            <span className="font-bold text-teal-800 font-display">
+              {avgMoodScore ? `${avgMoodScore} / 5` : 'No scores yet'}
+            </span>
+          </div>
+
+          <div className="bg-gray-50/80 p-3 rounded-xl border border-gray-100 flex items-center justify-between">
+            <span className="text-gray-500">Clinical Evaluation</span>
+            <span className="font-medium text-gray-600">
+              Non-Diagnostic Tracker
+            </span>
+          </div>
+        </div>
+
+        {/* Supportive Prompt if latest check-in indicated distress */}
+        {latestNeedsSupport && (
+          <div className="mt-4 p-4 rounded-2xl bg-amber-50/80 border border-amber-200/80 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 text-xs">
+            <div className="flex items-center gap-2.5 text-amber-950">
+              <Sparkles className="w-4 h-4 text-amber-700 shrink-0" />
+              <span>
+                Your recent check-in indicated noticeable stress or heavy feelings. Be gentle with your body today.
+              </span>
+            </div>
+            <div className="flex items-center gap-2 shrink-0">
+              {onOpenGrounding && (
+                <button
+                  type="button"
+                  onClick={onOpenGrounding}
+                  className="px-3 py-1.5 rounded-lg bg-teal-700 text-white font-semibold hover:bg-teal-800 transition-colors cursor-pointer shadow-2xs flex items-center gap-1"
+                >
+                  <Wind className="w-3.5 h-3.5" />
+                  <span>Sensory Grounding</span>
+                </button>
+              )}
+              {onOpenCrisis && (
+                <button
+                  type="button"
+                  onClick={onOpenCrisis}
+                  className="px-3 py-1.5 rounded-lg bg-white border border-red-200 text-red-700 font-semibold hover:bg-red-50 transition-colors cursor-pointer"
+                >
+                  <span>14416 Helpline</span>
+                </button>
+              )}
+            </div>
+          </div>
+        )}
       </div>
 
       {/* Main Content 2-Column Grid */}

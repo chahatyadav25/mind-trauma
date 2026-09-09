@@ -6,7 +6,9 @@ import {
   SymptomCluster, 
   ResourceItem, 
   GroundingStep, 
-  AssessmentRecord 
+  AssessmentRecord,
+  DailyCheckIn,
+  WeeklyTrendDay
 } from '../types';
 
 export const TRAUMA_EXPOSURE_QUESTION: Question = {
@@ -319,3 +321,193 @@ export const BRAND_ASSETS = {
   logoUrl: 'https://lh3.googleusercontent.com/aida/AEtjO1Xw8qGu_DVrHKNXQwm6z8cDtlI8h9BIEuzHwJAa5hXG_3F2_8DRyekp1UAu45MHepP-HSGKo2GL90xOLSQLXoPN3eno-xiw9GJA6Q7wG0H2XXMpfCkNpVWz1mCZ2DL9XNt67c4KlHAf9iGCjeDA0VluInPaTRLc_zUXZ_5uU3A8Awkvgwl-uf9k3MXVEVjuG9qQnRruxcqGhiVyALG3FOLcCkH8a5g318RlrlrT9lX8D-0cupn42gVblDEh',
   heroIllustration: 'https://lh3.googleusercontent.com/aida/AEtjO1WDrmAZMOeuCvlc-RCcWYMhVg2lV0Gwf6qi00j7PWfIC5JWEF45PLk9XppdTcN6HStzskXCujrae_cbARs-VGJ6zv_6C0abnQmm9Ucz9LyM4rJr8_cPy4uq5ANQrPMZomOmGOwi_IQLEAqL8JIwcPPYcR-u6zp_tmi7OW69flmewBAySrS99hszFAxY0DZstJpIQxRzyuRr13rwV_oFAlm5yeduuBHDaOuDSazb5TK1rrXHUa_k5MrBLdDL'
 };
+
+// ==========================================
+// DAILY MOOD CHECK-IN DEFINITIONS & HELPERS
+// ==========================================
+
+export const MOOD_OPTIONS: { score: 1 | 2 | 3 | 4 | 5; label: string; emoji: string; description: string; color: string }[] = [
+  { score: 1, label: 'Very Low', emoji: '😔', description: 'Feeling deeply down, exhausted, or numb', color: '#DC2626' },
+  { score: 2, label: 'Low', emoji: '🙁', description: 'Feeling sad, drained, or struggling', color: '#EA580C' },
+  { score: 3, label: 'Okay / Steady', emoji: '😐', description: 'Holding steady, neither high nor low', color: '#D97706' },
+  { score: 4, label: 'Good', emoji: '🙂', description: 'Feeling calm, content, and grounded', color: '#0D9488' },
+  { score: 5, label: 'Very Good', emoji: '😊', description: 'Feeling peaceful, uplifted, or safe', color: '#059669' }
+];
+
+export const DAY_OVERALL_OPTIONS = [
+  { value: 'Overwhelming / Difficult', label: 'Overwhelming / Difficult' },
+  { value: 'Tiring / Heavy', label: 'Tiring / Heavy' },
+  { value: 'Steady / Uneventful', label: 'Steady / Uneventful' },
+  { value: 'Calm / Pleasant', label: 'Calm / Pleasant' },
+  { value: 'Energizing / Uplifting', label: 'Energizing / Uplifting' },
+  { value: 'Prefer not to say', label: 'Prefer not to say' }
+];
+
+export const STRESS_LEVEL_OPTIONS = [
+  { value: 'Minimal / Relaxed', label: 'Minimal / Relaxed' },
+  { value: 'Mild / Manageable', label: 'Mild / Manageable' },
+  { value: 'Moderate / Noticeable tension', label: 'Moderate / Noticeable tension' },
+  { value: 'High / Overwhelming', label: 'High / Overwhelming' },
+  { value: 'Prefer not to say', label: 'Prefer not to say' }
+];
+
+export const SLEEP_QUALITY_OPTIONS = [
+  { value: 'Sound / Restful', label: 'Sound / Restful' },
+  { value: 'Fair / Okay', label: 'Fair / Okay' },
+  { value: 'Somewhat disrupted', label: 'Somewhat disrupted' },
+  { value: 'Very poor / Restless or nightmares', label: 'Very poor / Restless or nightmares' },
+  { value: 'Prefer not to say', label: 'Prefer not to say' }
+];
+
+export const SUPPORT_CONNECTION_OPTIONS = [
+  { value: 'Yes, had someone supportive', label: 'Yes, had someone supportive' },
+  { value: 'Briefly / A little', label: 'Briefly / A little' },
+  { value: 'No, felt isolated / alone', label: 'No, felt isolated / alone' },
+  { value: 'Did not feel like talking to anyone', label: 'Did not feel like talking to anyone' },
+  { value: 'Prefer not to say', label: 'Prefer not to say' }
+];
+
+export function formatDateKey(d: Date): string {
+  const year = d.getFullYear();
+  const month = String(d.getMonth() + 1).padStart(2, '0');
+  const day = String(d.getDate()).padStart(2, '0');
+  return `${year}-${month}-${day}`;
+}
+
+export function formatDisplayDate(d: Date): string {
+  return d.toLocaleDateString('en-US', {
+    weekday: 'short',
+    month: 'short',
+    day: 'numeric',
+    year: 'numeric'
+  });
+}
+
+export function getMondayOfWeek(d: Date): Date {
+  const date = new Date(d);
+  const day = date.getDay(); // 0 is Sunday, 1 is Monday, ...
+  // Diff to reach Monday (if Sunday 0, subtract 6 days; if Mon 1, subtract 0, etc.)
+  const diff = (day === 0 ? -6 : 1) - day;
+  date.setDate(date.getDate() + diff);
+  date.setHours(0, 0, 0, 0);
+  return date;
+}
+
+export function getCurrentWeekDays(checkIns: DailyCheckIn[], refDate = new Date()): WeeklyTrendDay[] {
+  const monday = getMondayOfWeek(refDate);
+  const todayKey = formatDateKey(refDate);
+  const days: WeeklyTrendDay[] = [];
+
+  const shortNames = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
+  const fullNames = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'];
+
+  for (let i = 0; i < 7; i++) {
+    const current = new Date(monday);
+    current.setDate(monday.getDate() + i);
+    current.setHours(12, 0, 0, 0);
+    const dateStr = formatDateKey(current);
+    const isToday = dateStr === todayKey;
+    const isFuture = dateStr > todayKey;
+    const checkIn = checkIns.find(c => c.date === dateStr);
+
+    days.push({
+      dayName: shortNames[i],
+      fullDayName: fullNames[i],
+      dateStr,
+      dayOfMonth: current.getDate(),
+      isToday,
+      isFuture,
+      checkIn
+    });
+  }
+
+  return days;
+}
+
+export function isCheckInSupportNeeded(checkIn: Partial<DailyCheckIn>): boolean {
+  if (checkIn.mood === 1) return true;
+  if (checkIn.stressLevel && checkIn.stressLevel.toLowerCase().includes('high')) return true;
+  if (checkIn.sleepQuality && checkIn.sleepQuality.toLowerCase().includes('nightmares')) return true;
+  return false;
+}
+
+export function generateSeedCheckIns(refDate = new Date()): DailyCheckIn[] {
+  const monday = getMondayOfWeek(refDate);
+  const todayKey = formatDateKey(refDate);
+
+  const monDate = new Date(monday);
+  const monKey = formatDateKey(monDate);
+
+  const tueDate = new Date(monday);
+  tueDate.setDate(monday.getDate() + 1);
+  const tueKey = formatDateKey(tueDate);
+
+  const list: DailyCheckIn[] = [];
+
+  // Seed Monday if today is not Monday
+  if (monKey !== todayKey) {
+    list.push({
+      id: `seed-${monKey}`,
+      date: monKey,
+      displayDate: formatDisplayDate(monDate),
+      timestamp: monDate.getTime() + 9 * 3600 * 1000,
+      mood: 3,
+      moodLabel: 'Okay / Steady',
+      dayOverall: 'Steady / Uneventful',
+      stressLevel: 'Mild / Manageable',
+      sleepQuality: 'Fair / Okay',
+      feltSupported: 'Yes, had someone supportive',
+      notes: 'Grounded myself with quiet music in the afternoon.'
+    });
+  }
+
+  // Seed Tuesday if today is past Tuesday
+  if (tueKey !== todayKey && refDate.getDay() !== 1 && refDate.getDay() !== 2) {
+    list.push({
+      id: `seed-${tueKey}`,
+      date: tueKey,
+      displayDate: formatDisplayDate(tueDate),
+      timestamp: tueDate.getTime() + 10 * 3600 * 1000,
+      mood: 4,
+      moodLabel: 'Good',
+      dayOverall: 'Calm / Pleasant',
+      stressLevel: 'Mild / Manageable',
+      sleepQuality: 'Sound / Restful',
+      feltSupported: 'Yes, had someone supportive',
+      notes: 'Felt calm and present during work.'
+    });
+  }
+
+  return list;
+}
+
+const CHECKIN_STORAGE_KEY = 'mindtrauma_daily_checkins';
+
+export function loadStoredCheckIns(): DailyCheckIn[] {
+  try {
+    const raw = localStorage.getItem(CHECKIN_STORAGE_KEY);
+    if (raw) {
+      const parsed = JSON.parse(raw);
+      if (Array.isArray(parsed) && parsed.length > 0) {
+        return parsed;
+      }
+    }
+  } catch (e) {
+    console.warn('Could not read check-ins from localStorage:', e);
+  }
+  const seed = generateSeedCheckIns();
+  try {
+    localStorage.setItem(CHECKIN_STORAGE_KEY, JSON.stringify(seed));
+  } catch {
+    // Ignore storage issues in test/sandboxed envs
+  }
+  return seed;
+}
+
+export function saveStoredCheckIns(checkIns: DailyCheckIn[]): void {
+  try {
+    localStorage.setItem(CHECKIN_STORAGE_KEY, JSON.stringify(checkIns));
+  } catch (e) {
+    console.warn('Could not save check-ins to localStorage:', e);
+  }
+}

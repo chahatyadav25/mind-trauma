@@ -92,9 +92,48 @@ export interface ChatMessage {
   isFallback?: boolean;
 }
 
+export interface ChatSession {
+  id: string;
+  title: string;
+  createdAt: number;
+  updatedAt: number;
+  messages: ChatMessage[];
+}
+
+export interface ChatHistoryAuth {
+  isConfigured: boolean;
+  salt: string;
+  pinHash: string;
+  updatedAt: number;
+}
+
 export interface GroundingStep {
   step: number;
   title: string;
   iconName: string;
   text: string;
+}
+
+export interface DailyCheckIn {
+  id: string;
+  date: string; // ISO date 'YYYY-MM-DD'
+  displayDate: string; // e.g. 'Wed, Sep 9, 2026'
+  timestamp: number;
+  mood: 1 | 2 | 3 | 4 | 5 | null; // 1: Very Low, 2: Low, 3: Okay, 4: Good, 5: Very Good, null: Prefer not to say
+  moodLabel: string;
+  dayOverall: string;
+  stressLevel: string;
+  sleepQuality: string;
+  feltSupported: string;
+  notes?: string;
+}
+
+export interface WeeklyTrendDay {
+  dayName: string; // 'Mon', 'Tue', etc.
+  fullDayName: string; // 'Monday', 'Tuesday', etc.
+  dateStr: string; // 'YYYY-MM-DD'
+  dayOfMonth: number;
+  isToday: boolean;
+  isFuture: boolean;
+  checkIn?: DailyCheckIn;
 }
