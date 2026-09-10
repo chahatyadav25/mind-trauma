@@ -215,7 +215,7 @@ Format requirements:
         response = await generateWithTimeout(ai, 'gemini-3.1-flash-lite', {
           contents: [{ role: 'user', parts: [{ text: prompt }] }],
           config: {
-            systemInstruction: 'You are AASRA, an empathetic, trauma-informed clinical assistant synthesizing screening questionnaires for victims and survivors.'
+            systemInstruction: 'You are Saathi, an empathetic, trauma-informed clinical assistant synthesizing screening questionnaires for victims and survivors.'
           }
         }, 25000);
       } catch (err: any) {
@@ -224,7 +224,7 @@ Format requirements:
         response = await generateWithTimeout(ai, 'gemini-3.5-flash', {
           contents: [{ role: 'user', parts: [{ text: prompt }] }],
           config: {
-            systemInstruction: 'You are AASRA, an empathetic, trauma-informed clinical assistant synthesizing screening questionnaires for victims and survivors.'
+            systemInstruction: 'You are Saathi, an empathetic, trauma-informed clinical assistant synthesizing screening questionnaires for victims and survivors.'
           }
         }, 25000);
       }
@@ -265,7 +265,7 @@ Format requirements:
 
       const ai = new GoogleGenAI({ apiKey });
 
-      const systemInstruction = `You are AASRA, an empathetic, trauma-informed psychoeducational assistant.
+      const systemInstruction = `You are Saathi, an empathetic, trauma-informed psychoeducational assistant.
 You provide supportive information, explain PTSD symptoms according to DSM-5 (Intrusive memories, Avoidance, Hyperarousal & reactivity, Negative cognitions & mood), and guide users through nervous system regulation exercises (5-4-3-2-1 grounding, box breathing).
 CLINICAL BOUNDARIES & SAFETY PROTOCOLS:
 1. You are NOT a doctor, therapist, or emergency service. Never diagnose.
@@ -321,7 +321,7 @@ CLINICAL BOUNDARIES & SAFETY PROTOCOLS:
       if (contents.length > 0 && contents[0].role === 'model') {
         contents.unshift({
           role: 'user',
-          parts: [{ text: 'Hello AASRA.' }]
+          parts: [{ text: 'Hello Saathi.' }]
         });
       }
 
@@ -359,7 +359,7 @@ CLINICAL BOUNDARIES & SAFETY PROTOCOLS:
 
   // Health check
   app.get('/api/health', (req, res) => {
-    res.json({ status: 'ok', app: 'MindTrauma AI', timestamp: new Date().toISOString() });
+    res.json({ status: 'ok', app: 'Aasra', timestamp: new Date().toISOString() });
   });
 
   // Vite middleware for development

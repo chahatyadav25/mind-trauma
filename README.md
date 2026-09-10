@@ -1,4 +1,4 @@
-# MindTrauma AI
+# Aasra
 
 AI-assisted real-time stress and trauma screening and support platform developed for Smart India Hackathon 2026.
 
@@ -23,7 +23,7 @@ AI-assisted real-time stress and trauma screening and support platform developed
 ## Key Features
 
 - Trauma-sensitive screening
-- AI-assisted support through Aasra
+- AI-assisted support through Saathi
 - Stress and wellbeing assessment
 - Daily mood check-ins
 - Weekly mood tracking

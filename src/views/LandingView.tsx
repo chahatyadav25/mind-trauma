@@ -86,7 +86,7 @@ export const LandingView: React.FC<LandingViewProps> = ({ onNavigate, onOpenCris
                 className="px-6 py-3.5 rounded-xl bg-teal-50 text-teal-900 text-sm font-semibold hover:bg-teal-100 transition-colors flex items-center justify-center gap-2 border border-teal-200/80 cursor-pointer"
               >
                 <Bot className="w-4 h-4 text-teal-700" />
-                <span>Talk with AASRA</span>
+                <span>Talk with Saathi</span>
               </button>
             </div>
 
@@ -213,16 +213,16 @@ export const LandingView: React.FC<LandingViewProps> = ({ onNavigate, onOpenCris
             <div className="w-11 h-11 rounded-xl bg-purple-50 text-purple-700 flex items-center justify-center border border-purple-100 mb-4">
               <Bot className="w-5 h-5" />
             </div>
-            <h2 className="text-base font-bold text-gray-900 mb-1.5 font-display">AASRA AI Support</h2>
+            <h2 className="text-base font-bold text-gray-900 mb-1.5 font-display">Saathi AI Support</h2>
             <p className="text-xs text-gray-600 leading-relaxed">
-              Discuss results, explore psychoeducational explanations, and practice calming strategies with AASRA, your empathetic AI dialogue companion.
+              Discuss results, explore psychoeducational explanations, and practice calming strategies with Saathi, your empathetic AI dialogue companion.
             </p>
           </div>
           <button 
             onClick={() => onNavigate('chat')}
             className="mt-4 text-xs font-semibold text-purple-800 hover:text-purple-950 flex items-center gap-1"
           >
-            <span>Consult AASRA</span>
+            <span>Consult Saathi</span>
             <ArrowRight className="w-3.5 h-3.5" />
           </button>
         </div>
@@ -256,7 +256,7 @@ export const LandingView: React.FC<LandingViewProps> = ({ onNavigate, onOpenCris
               Clinical Disclaimer &amp; Medical Boundaries
             </span>
             <p className="text-xs text-gray-600 leading-relaxed">
-              MindTrauma AI is an informational screening and psychoeducational support aid—it does not formulate a medical diagnosis or substitute for care from a licensed healthcare provider, psychologist, or psychiatrist. Symptoms persisting for over one month with functional impairment warrant professional consultation.
+              Aasra is an informational screening and psychoeducational support aid—it does not formulate a medical diagnosis or substitute for care from a licensed healthcare provider, psychologist, or psychiatrist. Symptoms persisting for over one month with functional impairment warrant professional consultation.
             </p>
           </div>
         </div>
@@ -292,7 +292,7 @@ export const LandingView: React.FC<LandingViewProps> = ({ onNavigate, onOpenCris
       <footer className="pt-6 pb-2 flex flex-col md:flex-row items-center justify-between gap-4 text-xs text-gray-500 border-t border-gray-200">
         <div className="flex items-center gap-2">
           <HeartHandshake className="w-4 h-4 text-teal-700" />
-          <span className="font-medium text-gray-700">MindTrauma AI • Evidence-Informed Clinical Screener</span>
+          <span className="font-medium text-gray-700">Aasra • Evidence-Informed Clinical Screener</span>
         </div>
 
         <div className="flex flex-wrap justify-center gap-x-5 gap-y-2">

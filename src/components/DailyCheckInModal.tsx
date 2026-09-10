@@ -364,7 +364,7 @@ export const DailyCheckInModal: React.FC<DailyCheckInModalProps> = ({
                       className="px-3 py-1.5 rounded-lg bg-white border border-teal-200 text-teal-800 text-xs font-semibold hover:bg-teal-50 transition-colors flex items-center gap-1.5 cursor-pointer"
                     >
                       <Bot className="w-3.5 h-3.5 text-teal-600" />
-                      <span>Talk with AASRA AI</span>
+                      <span>Talk with Saathi AI</span>
                     </button>
                   )}
 

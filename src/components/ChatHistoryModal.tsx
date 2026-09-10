@@ -372,7 +372,7 @@ export const ChatHistoryModal: React.FC<ChatHistoryModalProps> = ({
           </div>
 
           <h2 id="chat-history-title" className="text-xl sm:text-2xl font-bold font-display text-white flex items-center gap-2">
-            AASRA Chat History
+            Saathi Chat History
           </h2>
           <p className="text-xs sm:text-sm text-teal-100/90 mt-1 max-w-lg leading-relaxed">
             {currentView === 'setup'
@@ -418,7 +418,7 @@ export const ChatHistoryModal: React.FC<ChatHistoryModalProps> = ({
                   <span>Why do I need a PIN?</span>
                 </div>
                 <p className="leading-relaxed">
-                  Conversations with AASRA often touch on sensitive stress, trauma reactions, and mental health symptoms.
+                  Conversations with Saathi often touch on sensitive stress, trauma reactions, and mental health symptoms.
                   Setting a PIN ensures your chat transcripts remain private from anyone else who uses this device.
                 </p>
                 <p className="text-[11px] text-teal-800 font-medium pt-1 border-t border-teal-200/60">
@@ -630,7 +630,7 @@ export const ChatHistoryModal: React.FC<ChatHistoryModalProps> = ({
                     No Saved Conversations Yet
                   </h4>
                   <p className="text-xs text-gray-500 max-w-xs mt-1">
-                    As you chat with AASRA, your conversations will automatically be saved and protected here.
+                    As you chat with Saathi, your conversations will automatically be saved and protected here.
                   </p>
                   <button
                     type="button"
@@ -890,7 +890,7 @@ export const ChatHistoryModal: React.FC<ChatHistoryModalProps> = ({
                   Permanently Delete All Chat History?
                 </h3>
                 <p className="text-xs text-gray-600 mt-1 leading-relaxed">
-                  This will permanently erase all saved AASRA conversation transcripts from this browser's local storage. This action cannot be undone.
+                  This will permanently erase all saved Saathi conversation transcripts from this browser's local storage. This action cannot be undone.
                 </p>
               </div>
 

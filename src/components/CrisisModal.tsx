@@ -216,7 +216,7 @@ export const CrisisModal: React.FC<CrisisModalProps> = ({ isOpen, onClose }) => 
           onClick={onClose}
           className="w-full py-3 rounded-xl bg-gray-100 text-gray-800 text-xs sm:text-sm font-semibold hover:bg-gray-200 transition-colors border border-gray-200 cursor-pointer"
         >
-          Return to MindTrauma AI
+          Return to Aasra
         </button>
       </div>
     </div>

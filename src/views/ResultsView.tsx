@@ -410,7 +410,7 @@ export const ResultsView: React.FC<ResultsViewProps> = ({
                     Step 5: AI Preliminary Assessment &amp; Referral
                   </h3>
                   <span className="text-[11px] text-gray-500 font-medium flex items-center gap-1">
-                    Synthesized with AASRA &bull; Model: {activeModel}
+                    Synthesized with Saathi &bull; Model: {activeModel}
                   </span>
                 </div>
               </div>
@@ -473,7 +473,7 @@ export const ResultsView: React.FC<ResultsViewProps> = ({
                 className="py-3.5 px-5 rounded-xl bg-black text-white font-semibold text-xs sm:text-sm shadow-sm hover:bg-gray-800 transition-all flex items-center justify-center gap-2 cursor-pointer"
               >
                 <Bot className="w-4 h-4" />
-                <span>Discuss Results with AASRA</span>
+                <span>Discuss Results with Saathi</span>
               </button>
 
               <button

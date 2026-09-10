@@ -14,7 +14,7 @@ const TABS: { id: ViewId; label: string }[] = [
   { id: 'assessment', label: '5. Questionnaire' },
   { id: 'results', label: '6. Results' },
   { id: 'symptoms', label: '7. Symptom Overview' },
-  { id: 'chat', label: '8. AASRA' },
+  { id: 'chat', label: '8. Saathi' },
   { id: 'resources', label: '9. Resources' },
   { id: 'dashboard', label: '10. Dashboard' },
   { id: 'history', label: '11. History' },

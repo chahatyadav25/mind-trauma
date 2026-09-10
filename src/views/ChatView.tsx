@@ -221,7 +221,7 @@ export const ChatView: React.FC<ChatViewProps> = ({ onOpenGrounding, onOpenCrisi
               </div>
               <div>
                 <h2 className="text-sm font-bold text-gray-950 font-display flex items-center gap-1.5">
-                  AASRA Companion
+                  Saathi Companion
                   <span className="w-2 h-2 rounded-full bg-teal-600 animate-pulse" />
                 </h2>
                 <span className="text-[11px] text-teal-800 font-medium">
@@ -482,7 +482,7 @@ export const ChatView: React.FC<ChatViewProps> = ({ onOpenGrounding, onOpenCrisi
                   {msg.sender === 'assistant' && (
                     <div className="flex items-center gap-1 mb-1 px-1 text-[11px] font-medium text-teal-800">
                       <Sparkles className="w-3 h-3 text-teal-600" />
-                      <span>{msg.isFallback ? 'Clinical Protocol' : 'AASRA'}</span>
+                      <span>{msg.isFallback ? 'Clinical Protocol' : 'Saathi'}</span>
                     </div>
                   )}
                   <div

@@ -502,7 +502,7 @@ export function createInitialChatSession(): ChatSession {
       {
         id: 'welcome',
         sender: 'assistant',
-        text: "Hello. I'm AASRA, your trauma-informed psychoeducational companion. I'm here to offer supportive guidance, explain clinical terms, and guide you through calming grounding practices.\n\nWhat would feel most helpful for you to explore right now?",
+        text: "Hello. I'm Saathi, your trauma-informed psychoeducational companion. I'm here to offer supportive guidance, explain clinical terms, and guide you through calming grounding practices.\n\nWhat would feel most helpful for you to explore right now?",
         timestamp: 'Just now'
       }
     ]
@@ -516,7 +516,7 @@ export function autoGenerateTitle(messages: ChatMessage[]): string {
   const firstUserMsg = messages.find(m => m.sender === 'user');
   if (!firstUserMsg || !firstUserMsg.text.trim()) {
     const dateStr = new Date().toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
-    return `AASRA Session (${dateStr})`;
+    return `Saathi Session (${dateStr})`;
   }
 
   let text = firstUserMsg.text.trim().replace(/[\r\n]+/g, ' ');

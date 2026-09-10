@@ -1,5 +1,5 @@
 /**
- * Cryptographic utility for securing local AASRA Chat History.
+ * Cryptographic utility for securing local Saathi Chat History.
  *
  * Utilizes the native Web Crypto API (crypto.subtle):
  * - Random 16-byte cryptographic salt generation

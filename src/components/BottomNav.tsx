@@ -12,7 +12,7 @@ export const BottomNav: React.FC<BottomNavProps> = ({ currentView, onNavigate })
     { id: 'landing', label: 'Home', icon: <Home className="w-5 h-5" /> },
     { id: 'assessment', label: 'Screening', icon: <ClipboardList className="w-5 h-5" /> },
     { id: 'results', label: 'Results', icon: <BarChart3 className="w-5 h-5" /> },
-    { id: 'chat', label: 'AASRA', icon: <Bot className="w-5 h-5" /> },
+    { id: 'chat', label: 'Saathi', icon: <Bot className="w-5 h-5" /> },
     { id: 'resources', label: 'Resources', icon: <BookOpen className="w-5 h-5" /> },
     { id: 'dashboard', label: 'Dashboard', icon: <LayoutDashboard className="w-5 h-5" /> },
   ];

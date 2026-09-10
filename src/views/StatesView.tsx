@@ -86,7 +86,7 @@ export const StatesView: React.FC<StatesViewProps> = ({ onNavigate, onOpenCrisis
               High-Risk Safety Escalation
             </h3>
             <p className="text-xs sm:text-sm text-gray-700 leading-relaxed mb-6">
-              MindTrauma AI has paused standard screening because your immediate personal safety is always the highest priority.
+              Aasra has paused standard screening because your immediate personal safety is always the highest priority.
             </p>
             <div className="w-full flex flex-col sm:flex-row gap-3">
               <a

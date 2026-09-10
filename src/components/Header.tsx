@@ -27,7 +27,7 @@ const NAV_LINKS: { id: ViewId; label: string; icon: React.ComponentType<{ classN
   { id: 'landing', label: 'Home', icon: Home },
   { id: 'assessment', label: 'Screening', icon: ClipboardList },
   { id: 'symptoms', label: 'Symptoms', icon: Activity },
-  { id: 'chat', label: 'AASRA', icon: Bot },
+  { id: 'chat', label: 'Saathi', icon: Bot },
   { id: 'resources', label: 'Resources', icon: BookOpen },
   { id: 'dashboard', label: 'Dashboard', icon: LayoutDashboard },
   { id: 'history', label: 'History', icon: History },
@@ -62,7 +62,7 @@ export const Header: React.FC<HeaderProps> = ({
           <button
             onClick={() => handleNavClick('landing')}
             className="flex items-center gap-3 text-left group focus:outline-none"
-            title="MindTrauma AI - Home"
+            title="Aasra - Home"
           >
             <div className="w-9 h-9 sm:w-10 sm:h-10 rounded-2xl bg-gradient-to-tr from-teal-700 via-teal-600 to-sky-600 flex items-center justify-center shrink-0 shadow-xs group-hover:scale-105 transition-transform text-white">
               <svg className="w-5 h-5 sm:w-6 sm:h-6" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
@@ -73,8 +73,8 @@ export const Header: React.FC<HeaderProps> = ({
               </svg>
             </div>
             <div className="flex flex-col min-w-0">
-              <span className="font-bold text-lg sm:text-xl text-gray-950 tracking-tight leading-none font-display flex items-center gap-1.5">
-                MindTrauma <span className="text-teal-700 font-semibold text-xs sm:text-sm px-2 py-0.5 rounded-full bg-teal-50 border border-teal-200/60">AI</span>
+              <span className="font-bold text-lg sm:text-xl text-gray-950 tracking-tight leading-none font-display">
+                Aasra
               </span>
               <span className="text-[11px] text-gray-500 font-medium hidden sm:inline-block mt-0.5">
                 Clinical Screener &amp; Trauma Support

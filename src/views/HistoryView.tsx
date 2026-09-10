@@ -122,10 +122,10 @@ export const HistoryView: React.FC<HistoryViewProps> = ({
           type="button"
           onClick={() => onNavigate('chat')}
           className="ml-auto px-3 sm:px-4 py-2 rounded-xl text-xs sm:text-sm font-semibold transition-all flex items-center gap-1.5 cursor-pointer bg-teal-50 text-teal-900 hover:bg-teal-100 border border-teal-200/80 shadow-2xs"
-          title="Open AASRA AI Chat & View PIN-Protected History"
+          title="Open Saathi AI Chat & View PIN-Protected History"
         >
           <Bot className="w-4 h-4 text-teal-700" />
-          <span className="hidden sm:inline">AASRA</span>
+          <span className="hidden sm:inline">Saathi</span>
           <span>Chat History</span>
           <Lock className="w-3 h-3 text-amber-600" />
         </button>
