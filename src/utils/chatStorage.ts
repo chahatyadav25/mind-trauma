@@ -10,6 +10,9 @@ import {
 const STORAGE_AUTH_KEY = 'mindtrauma_asra_auth';
 const STORAGE_ENCRYPTED_SESSIONS_KEY = 'mindtrauma_asra_encrypted_sessions';
 const STORAGE_CURRENT_SESSION_KEY = 'mindtrauma_asra_current_session';
+const STORAGE_PENDING_SESSIONS_KEY = 'mindtrauma_asra_pending_sessions';
+const STORAGE_UNPROTECTED_SESSIONS_KEY = 'mindtrauma_asra_sessions_unprotected';
+const SESSION_PIN_KEY = 'mindtrauma_asra_active_pin';
 
 export interface EncryptedStoreEnvelope {
   version: number;
@@ -17,6 +20,118 @@ export interface EncryptedStoreEnvelope {
   ivHex: string;
   sessionCount: number;
   updatedAt: number;
+}
+
+/**
+ * Access the active PIN cached in browser sessionStorage for this tab only.
+ * Plain-text PINs are never saved to localStorage.
+ */
+export function getActiveSessionPin(): string | null {
+  try {
+    if (typeof window !== 'undefined' && window.sessionStorage) {
+      return window.sessionStorage.getItem(SESSION_PIN_KEY);
+    }
+  } catch (err) {
+    console.warn('Could not read session PIN:', err);
+  }
+  return null;
+}
+
+export function setActiveSessionPin(pin: string | null): void {
+  try {
+    if (typeof window !== 'undefined' && window.sessionStorage) {
+      if (pin) {
+        window.sessionStorage.setItem(SESSION_PIN_KEY, pin);
+      } else {
+        window.sessionStorage.removeItem(SESSION_PIN_KEY);
+      }
+    }
+  } catch (err) {
+    console.warn('Could not set session PIN:', err);
+  }
+}
+
+/**
+ * Buffer helpers for auto-saved sessions pending PIN encryption
+ */
+export function getPendingSessions(): ChatSession[] {
+  try {
+    const raw = localStorage.getItem(STORAGE_PENDING_SESSIONS_KEY);
+    if (raw) {
+      const parsed = JSON.parse(raw);
+      if (Array.isArray(parsed)) return parsed;
+    }
+  } catch {}
+  return [];
+}
+
+export function savePendingSession(session: ChatSession): void {
+  try {
+    const list = getPendingSessions();
+    const idx = list.findIndex(s => s.id === session.id);
+    let updated: ChatSession[];
+    if (idx >= 0) {
+      updated = [...list];
+      updated[idx] = session;
+    } else {
+      updated = [session, ...list];
+    }
+    localStorage.setItem(STORAGE_PENDING_SESSIONS_KEY, JSON.stringify(updated));
+  } catch (err) {
+    console.warn('Could not save pending session:', err);
+  }
+}
+
+export function removePendingSession(sessionId: string): void {
+  try {
+    const list = getPendingSessions();
+    const filtered = list.filter(s => s.id !== sessionId);
+    if (filtered.length > 0) {
+      localStorage.setItem(STORAGE_PENDING_SESSIONS_KEY, JSON.stringify(filtered));
+    } else {
+      localStorage.removeItem(STORAGE_PENDING_SESSIONS_KEY);
+    }
+  } catch {}
+}
+
+export function clearPendingSessions(): void {
+  try {
+    localStorage.removeItem(STORAGE_PENDING_SESSIONS_KEY);
+  } catch {}
+}
+
+export function getUnprotectedSessions(): ChatSession[] {
+  try {
+    const raw = localStorage.getItem(STORAGE_UNPROTECTED_SESSIONS_KEY);
+    if (raw) {
+      const parsed = JSON.parse(raw);
+      if (Array.isArray(parsed)) return parsed;
+    }
+  } catch {}
+  return [];
+}
+
+export function saveUnprotectedSession(session: ChatSession): void {
+  try {
+    const list = getUnprotectedSessions();
+    const idx = list.findIndex(s => s.id === session.id);
+    let updated: ChatSession[];
+    if (idx >= 0) {
+      updated = [...list];
+      updated[idx] = session;
+    } else {
+      updated = [session, ...list];
+    }
+    localStorage.setItem(STORAGE_UNPROTECTED_SESSIONS_KEY, JSON.stringify(updated));
+  } catch (err) {
+    console.warn('Could not save unprotected session:', err);
+  }
+}
+
+export function clearUnprotectedSessions(): void {
+  try {
+    localStorage.removeItem(STORAGE_UNPROTECTED_SESSIONS_KEY);
+  } catch {}
 }
 
 /**
@@ -60,7 +175,7 @@ export function saveChatAuth(auth: ChatHistoryAuth): void {
  * - Generates random salt
  * - Computes PBKDF2 hash
  * - Saves auth record
- * - Initializes or migrates existing sessions with new encryption key
+ * - Migrates existing unprotected and pending sessions into encrypted storage
  */
 export async function setupChatPin(pin: string, initialSessions: ChatSession[] = []): Promise<{ success: boolean; error?: string }> {
   try {
@@ -80,8 +195,21 @@ export async function setupChatPin(pin: string, initialSessions: ChatSession[] =
 
     saveChatAuth(auth);
 
+    // Gather all existing unprotected sessions + pending + initialSessions
+    const unprotected = getUnprotectedSessions();
+    const pending = getPendingSessions();
+    const combinedMap = new Map<string, ChatSession>();
+
+    for (const s of [...initialSessions, ...pending, ...unprotected]) {
+      if (s && s.id) combinedMap.set(s.id, s);
+    }
+    const allToEncrypt = Array.from(combinedMap.values());
+
     // Save encrypted sessions under the new PIN
-    await saveEncryptedSessions(initialSessions, pin);
+    await saveEncryptedSessions(allToEncrypt, pin);
+    clearUnprotectedSessions();
+    clearPendingSessions();
+    setActiveSessionPin(pin);
 
     return { success: true };
   } catch (err: any) {
@@ -101,33 +229,63 @@ export async function verifyEnteredPin(enteredPin: string): Promise<boolean> {
 
 /**
  * Decrypts and loads all saved chat sessions from localStorage.
+ * Automatically merges any auto-saved pending sessions and re-encrypts them.
  */
 export async function loadDecryptedSessions(pin: string): Promise<ChatSession[]> {
   const auth = getChatAuth();
   if (!auth) return [];
 
   const raw = localStorage.getItem(STORAGE_ENCRYPTED_SESSIONS_KEY);
-  if (!raw) return [];
+  let sessions: ChatSession[] = [];
 
-  try {
-    const envelope: EncryptedStoreEnvelope = JSON.parse(raw);
-    if (!envelope.ciphertextHex || !envelope.ivHex) return [];
-
-    const sessions = await decryptChatPayload<ChatSession[]>(
-      envelope.ciphertextHex,
-      envelope.ivHex,
-      pin,
-      auth.salt
-    );
-
-    if (Array.isArray(sessions)) {
-      return sessions.sort((a, b) => b.updatedAt - a.updatedAt);
+  if (raw) {
+    try {
+      const envelope: EncryptedStoreEnvelope = JSON.parse(raw);
+      if (envelope.ciphertextHex && envelope.ivHex) {
+        const decrypted = await decryptChatPayload<ChatSession[]>(
+          envelope.ciphertextHex,
+          envelope.ivHex,
+          pin,
+          auth.salt
+        );
+        if (Array.isArray(decrypted)) {
+          sessions = decrypted;
+        }
+      }
+    } catch (err) {
+      console.error('Failed to decrypt sessions with PIN:', err);
+      throw new Error('Incorrect PIN or corrupted chat data.');
     }
-    return [];
-  } catch (err) {
-    console.error('Failed to decrypt sessions with PIN:', err);
-    throw new Error('Incorrect PIN or corrupted chat data.');
   }
+
+  // Merge any pending auto-saved sessions
+  const pending = getPendingSessions();
+  const unprotected = getUnprotectedSessions();
+  const toMerge = [...pending, ...unprotected];
+
+  if (toMerge.length > 0) {
+    let hasChanges = false;
+    for (const item of toMerge) {
+      const idx = sessions.findIndex(s => s.id === item.id);
+      if (idx >= 0) {
+        if (item.updatedAt >= sessions[idx].updatedAt || item.messages.length > sessions[idx].messages.length) {
+          sessions[idx] = item;
+          hasChanges = true;
+        }
+      } else {
+        sessions.unshift(item);
+        hasChanges = true;
+      }
+    }
+
+    if (hasChanges) {
+      await saveEncryptedSessions(sessions, pin);
+      clearPendingSessions();
+      clearUnprotectedSessions();
+    }
+  }
+
+  return sessions.sort((a, b) => b.updatedAt - a.updatedAt);
 }
 
 /**
@@ -224,11 +382,77 @@ export function clearAllChatHistory(resetPin = false): void {
   try {
     localStorage.removeItem(STORAGE_ENCRYPTED_SESSIONS_KEY);
     localStorage.removeItem(STORAGE_CURRENT_SESSION_KEY);
+    localStorage.removeItem(STORAGE_PENDING_SESSIONS_KEY);
+    localStorage.removeItem(STORAGE_UNPROTECTED_SESSIONS_KEY);
+    setActiveSessionPin(null);
     if (resetPin) {
       localStorage.removeItem(STORAGE_AUTH_KEY);
     }
   } catch (err) {
     console.warn('Could not clear chat history from storage:', err);
+  }
+}
+
+/**
+ * Automatically persists the conversation session as the user chats.
+ * - Updates STORAGE_CURRENT_SESSION_KEY so active chat is never lost on refresh or navigation.
+ * - If session contains user messages, automatically preserves it in the history archive:
+ *   - If PIN is configured and unlocked in sessionStorage, encrypts and saves immediately.
+ *   - If PIN is configured but locked, stores in pending buffer to be merged upon unlock.
+ *   - If PIN is not configured yet, stores in unprotected sessions list.
+ */
+export async function autoSaveSessionToHistory(session: ChatSession): Promise<void> {
+  // Always update current active session immediately
+  saveActiveChatSession(session);
+
+  const hasUserMessages = session.messages.some(m => m.sender === 'user');
+  if (!hasUserMessages) return;
+
+  const sessionWithTitle: ChatSession = {
+    ...session,
+    title: session.title === 'New Consultation' ? autoGenerateTitle(session.messages) : session.title,
+    updatedAt: Date.now()
+  };
+
+  const configured = isPinConfigured();
+  const sessionPin = getActiveSessionPin();
+
+  if (configured) {
+    if (sessionPin) {
+      try {
+        const loaded = await loadDecryptedSessions(sessionPin);
+        const existingIdx = loaded.findIndex(s => s.id === sessionWithTitle.id);
+        let updatedList: ChatSession[];
+        if (existingIdx >= 0) {
+          updatedList = [...loaded];
+          updatedList[existingIdx] = sessionWithTitle;
+        } else {
+          updatedList = [sessionWithTitle, ...loaded];
+        }
+        await saveEncryptedSessions(updatedList, sessionPin);
+        // Clear any pending buffer entry for this session
+        removePendingSession(sessionWithTitle.id);
+        return;
+      } catch (err) {
+        console.warn('Direct encryption with session PIN failed, storing to pending buffer:', err);
+      }
+    }
+    // If not unlocked yet or failed, save to pending buffer
+    savePendingSession(sessionWithTitle);
+  } else {
+    // PIN not configured yet: save to unprotected store
+    saveUnprotectedSession(sessionWithTitle);
+  }
+}
+
+/**
+ * Archives current active session to history if it has user messages,
+ * ensuring starting a new chat never discards previous conversations.
+ */
+export async function archiveActiveSessionBeforeNew(session: ChatSession): Promise<void> {
+  const hasUserMessages = session.messages.some(m => m.sender === 'user');
+  if (hasUserMessages) {
+    await autoSaveSessionToHistory(session);
   }
 }
 

@@ -5,7 +5,9 @@ import {
   saveActiveChatSession,
   createInitialChatSession,
   autoGenerateTitle,
-  formatSessionDateTime
+  formatSessionDateTime,
+  autoSaveSessionToHistory,
+  archiveActiveSessionBeforeNew
 } from '../utils/chatStorage';
 import { ChatHistoryModal } from '../components/ChatHistoryModal';
 import { 
@@ -53,11 +55,11 @@ export const ChatView: React.FC<ChatViewProps> = ({ onOpenGrounding, onOpenCrisi
     scrollToBottom();
   }, [messages, isLoading, showCrisisBanner]);
 
-  // Persist session whenever it changes
+  // Persist session whenever it changes & auto-save to history
   const updateSessionAndPersist = (updater: (prev: ChatSession) => ChatSession) => {
     setSession(prev => {
       const updated = updater(prev);
-      saveActiveChatSession(updated);
+      autoSaveSessionToHistory(updated);
       return updated;
     });
   };
@@ -72,6 +74,12 @@ export const ChatView: React.FC<ChatViewProps> = ({ onOpenGrounding, onOpenCrisi
       text: messageText,
       timestamp: 'Just now'
     };
+
+    // Prior messages before adding this new user message (avoid duplicate user turn in history)
+    const priorHistory = messages.slice(-10).map(m => ({
+      sender: m.sender,
+      text: m.text
+    }));
 
     // Append user message & update title if default
     let updatedMsgs = [...messages, userMsg];
@@ -103,10 +111,7 @@ export const ChatView: React.FC<ChatViewProps> = ({ onOpenGrounding, onOpenCrisi
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           message: messageText,
-          history: updatedMsgs.slice(-6).map(m => ({
-            sender: m.sender,
-            text: m.text
-          }))
+          history: priorHistory
         })
       });
 
@@ -130,7 +135,8 @@ export const ChatView: React.FC<ChatViewProps> = ({ onOpenGrounding, onOpenCrisi
         id: `a-${Date.now()}`,
         sender: 'assistant',
         text: "I'm right here with you. Processing past stress and difficult memories takes time and kindness toward yourself. Would you like to practice a quick grounding technique or learn about how trauma affects the body?",
-        timestamp: 'Just now'
+        timestamp: 'Just now',
+        isFallback: true
       };
 
       updateSessionAndPersist(prev => ({
@@ -170,7 +176,8 @@ export const ChatView: React.FC<ChatViewProps> = ({ onOpenGrounding, onOpenCrisi
     }));
   };
 
-  const handleClearChat = () => {
+  const handleClearChat = async () => {
+    await archiveActiveSessionBeforeNew(session);
     const clearedMsg: ChatMessage = {
       id: 'reset',
       sender: 'assistant',
@@ -186,7 +193,8 @@ export const ChatView: React.FC<ChatViewProps> = ({ onOpenGrounding, onOpenCrisi
     setShowCrisisBanner(false);
   };
 
-  const handleStartNewChat = () => {
+  const handleStartNewChat = async () => {
+    await archiveActiveSessionBeforeNew(session);
     const fresh = createInitialChatSession();
     setSession(fresh);
     saveActiveChatSession(fresh);

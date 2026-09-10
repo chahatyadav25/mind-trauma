@@ -9,6 +9,7 @@ dotenv.config();
 function getClinicalFallbackResponse(message: string): string {
   const lower = message.toLowerCase();
 
+  // Crisis & Emergency
   if (['die', 'suicide', 'kill myself', 'hurt myself', 'end it', 'emergency', 'harm', 'overdose'].some(w => lower.includes(w))) {
     return `⚠️ Your immediate safety is the highest priority. Please connect with caring human support right now:
 • Call Tele-MANAS: 14416 or 1800-891-4416 (Govt of India 24/7 free toll-free helpline across 20+ Indian languages).
@@ -17,15 +18,18 @@ function getClinicalFallbackResponse(message: string): string {
 • For immediate physical or medical danger in India, please dial 112 (National Emergency) or 108/102 (Ambulance), or visit the nearest emergency room. You do not have to carry this alone.`;
   }
 
-  if (lower.includes('score') || lower.includes('result') || lower.includes('screening')) {
+  // Screening & Assessment Scores
+  if (lower.includes('score') || lower.includes('result') || lower.includes('screening') || lower.includes('pc-ptsd') || lower.includes('gad-7')) {
     return `The Primary Care PTSD Screen (PC-PTSD-5) measures reactions experienced over the past month. A score of 3 or higher is considered a "positive screen," suggesting that post-traumatic symptoms may be significantly present. Remember that this is a clinical screener, not a formal diagnosis. Discussing these results with a licensed healthcare provider or trauma-informed therapist (such as one certified in EMDR or CPT) can help you explore personalized support.`;
   }
 
-  if (lower.includes('hyperarousal') || lower.includes('startled') || lower.includes('on guard') || lower.includes('fight or flight')) {
+  // Hyperarousal & Nervous System Activation
+  if (lower.includes('hyperarousal') || lower.includes('startled') || lower.includes('on guard') || lower.includes('fight or flight') || lower.includes('edge') || lower.includes('jumpy') || lower.includes('shaking') || lower.includes('heart racing')) {
     return `Hyperarousal occurs when your nervous system's threat-detection center (the amygdala) remains in a state of high alert long after a traumatic stressor has passed. Common signs include feeling easily startled, irritability, sleep disruptions, and physical muscle tension. Somatic practices, such as diaphragmatic breathing and 5-4-3-2-1 sensory grounding, can help gently signal to your nervous system that you are safe in this moment.`;
   }
 
-  if (lower.includes('grounding') || lower.includes('exercise') || lower.includes('calm') || lower.includes('panic') || lower.includes('anxiety')) {
+  // Grounding & Somatic Regulation
+  if (lower.includes('grounding') || lower.includes('exercise') || lower.includes('calm') || lower.includes('panic') || lower.includes('anxiety') || lower.includes('breathe') || lower.includes('breathing')) {
     return `Let's practice the 5-4-3-2-1 sensory grounding technique right now:
 1. Look around: Name 5 things you can see (e.g., a chair, a window, a beam of light).
 2. Feel: Notice 4 things you can touch (e.g., your feet on the floor, your clothing's texture).
@@ -36,18 +40,75 @@ function getClinicalFallbackResponse(message: string): string {
 Take a slow, deep breath in, and let your shoulders drop as you exhale.`;
   }
 
-  if (lower.includes('doctor') || lower.includes('therapist') || lower.includes('talk') || lower.includes('provider')) {
+  // Sleep, Nightmares & Intrusive Memories
+  if (lower.includes('sleep') || lower.includes('nightmare') || lower.includes('insomnia') || lower.includes('flashback') || lower.includes('memory') || lower.includes('dream') || lower.includes('reliving')) {
+    return `Intrusive memories and sleep disturbances are hallmark symptoms of trauma reactions (DSM-5 Criterion B). The brain has difficulty filing the traumatic memory into past storage, so it continues to replay as if happening right now.
+Tips for right now:
+• Keep a nightlight or grounding object by your bed.
+• Remind yourself upon waking: "Today is [day], I am in my bed, and the danger has passed."
+• Evidence-based therapies like EMDR or Imagery Rehearsal Therapy (IRT) are particularly helpful for recurring nightmares.`;
+  }
+
+  // Numbness, Depersonalization & Dissociation
+  if (lower.includes('numb') || lower.includes('frozen') || lower.includes('disconnected') || lower.includes('unreal') || lower.includes('blank') || lower.includes('empty') || lower.includes('dissociat')) {
+    return `Feeling emotionally numb or detached is the nervous system's "freeze" response. When fight or flight feels impossible, the dorsal vagal system steps in to dull overwhelming sensations. 
+You are not "broken" or unfeeling—this is a protective defense mechanism. Gentle physical sensations, like washing your hands with cool water or touching textured fabric, can help safely invite feeling back into your body at your own pace.`;
+  }
+
+  // Guilt, Shame & Self-Blame
+  if (lower.includes('guilt') || lower.includes('blame') || lower.includes('shame') || lower.includes('my fault') || lower.includes('should have') || lower.includes('could have')) {
+    return `Guilt and self-blame are very common after traumatic events (DSM-5 Criterion D). In psychology, this is known as "hindsight bias"—evaluating your past survival actions with knowledge you only have today.
+Please be gentle with yourself: Your brain did whatever it believed necessary in that moment to ensure your survival. Exploring these stuck points with a Cognitive Processing Therapy (CPT) practitioner can help relieve this heavy burden.`;
+  }
+
+  // Professional Help & Communication
+  if (lower.includes('doctor') || lower.includes('therapist') || lower.includes('talk') || lower.includes('provider') || lower.includes('psychiatrist') || lower.includes('counselor')) {
     return `When speaking with a physician or therapist about trauma, you can keep it simple: "I recently completed a validated PC-PTSD-5 screening and noticed that lingering reactions from past events are affecting my daily life, sleep, or mood. I would like to discuss an evaluation or referral to an evidence-based trauma specialist." You don't have to share all traumatic details until you feel comfortable and safe.`;
   }
 
-  if (lower.includes('emdr') || lower.includes('cpt') || lower.includes('treatment') || lower.includes('therapy')) {
+  // Evidence-Based Treatments
+  if (lower.includes('emdr') || lower.includes('cpt') || lower.includes('treatment') || lower.includes('therapy') || lower.includes('cure') || lower.includes('heal')) {
     return `Evidence-based trauma therapies have high success rates in helping the brain reprocess traumatic memories:
 • EMDR (Eye Movement Desensitization and Reprocessing): Uses bilateral stimulation to reduce emotional charge attached to traumatic memories.
 • CPT (Cognitive Processing Therapy): Helps identify and reframe stuck points, self-blame, and safety beliefs.
 • Somatic Experiencing: Focuses on releasing stored physical stress and restoring autonomic regulation.`;
   }
 
-  return `Thank you for sharing that with me. Experiencing trauma reactions can feel overwhelming and isolating, but these responses are normal physiological adaptations to severe stress. What aspect of what you're feeling would be most supportive to focus on right now—understanding symptoms, practical grounding exercises, or next steps with a healthcare provider?`;
+  // Triggers & Avoidance
+  if (lower.includes('trigger') || lower.includes('avoid') || lower.includes('scared of') || lower.includes('remind')) {
+    return `Triggers are sensory cues (sounds, smells, places) that your amygdala linked to the traumatic event. Avoidance is a natural protective reaction, but over time it can shrink your world.
+A trauma-informed approach involves gradual, safe desensitization paired with somatic grounding, helping your brain learn that the trigger is a reminder of the past, not an active danger in the present.`;
+  }
+
+  // Varied Compassionate Fallbacks
+  const fallbacks = [
+    `Thank you for sharing that with me. Experiencing trauma reactions can feel overwhelming and isolating, but these responses are normal physiological adaptations to severe stress. What aspect of what you're feeling would be most supportive to focus on right now—understanding symptoms, practical grounding exercises, or next steps with a healthcare provider?`,
+    `I hear you, and what you're describing is deeply valid. Healing from traumatic stress is not linear, and giving voice to these feelings is a courageous step. Would you like to explore how your body is feeling in this moment, or would you prefer information on coping strategies?`,
+    `Thank you for opening up about this. Trauma can impact how safe we feel in our bodies and in our environments. Remember that you do not have to carry this all alone. We can take this one step at a time—would a calming breathing exercise or learning about symptom patterns feel more helpful right now?`
+  ];
+
+  const hash = Math.abs(message.split('').reduce((acc, char) => acc + char.charCodeAt(0), 0));
+  return fallbacks[hash % fallbacks.length];
+}
+
+/**
+ * Timeout wrapper for Gemini generateContent to prevent hanging during API spikes.
+ */
+async function generateWithTimeout(
+  ai: GoogleGenAI,
+  model: string,
+  params: { contents: any[]; config?: any },
+  timeoutMs = 7000
+): Promise<any> {
+  return Promise.race([
+    ai.models.generateContent({
+      model,
+      ...params,
+    }),
+    new Promise<never>((_, reject) =>
+      setTimeout(() => reject(new Error(`Model ${model} timed out after ${timeoutMs}ms`)), timeoutMs)
+    )
+  ]);
 }
 
 function getClinicalAssessmentFallback(data: {
@@ -148,25 +209,24 @@ Format requirements:
 5. Indian Helplines (Tele-MANAS 14416, KIRAN 1800-599-0019, Vandrevala Foundation +91 9999 666 555).
 6. Mandatory Clinical Disclaimer: "The PC-PTSD-5 and GAD-7 are screening tools, not diagnostic tests; a positive result warrants further evaluation by a qualified professional." Keep concise (3-4 concise sections).`;
 
-      let response;
-      let usedModel = 'gemini-3.6-flash';
+      let response: any;
+      let usedModel = 'gemini-3.1-flash-lite';
       try {
-        response = await ai.models.generateContent({
-          model: 'gemini-3.6-flash',
+        response = await generateWithTimeout(ai, 'gemini-3.1-flash-lite', {
           contents: [{ role: 'user', parts: [{ text: prompt }] }],
           config: {
             systemInstruction: 'You are AASRA, an empathetic, trauma-informed clinical assistant synthesizing screening questionnaires for victims and survivors.'
           }
-        });
+        }, 25000);
       } catch (err: any) {
-        usedModel = 'gemini-3.8-flash';
-        response = await ai.models.generateContent({
-          model: 'gemini-3.8-flash',
+        console.warn('gemini-3.1-flash-lite attempt failed in /api/assess, trying gemini-3.5-flash:', err?.message);
+        usedModel = 'gemini-3.5-flash';
+        response = await generateWithTimeout(ai, 'gemini-3.5-flash', {
           contents: [{ role: 'user', parts: [{ text: prompt }] }],
           config: {
             systemInstruction: 'You are AASRA, an empathetic, trauma-informed clinical assistant synthesizing screening questionnaires for victims and survivors.'
           }
-        });
+        }, 25000);
       }
 
       const summary = response.text || fallbackText;
@@ -212,42 +272,77 @@ CLINICAL BOUNDARIES & SAFETY PROTOCOLS:
 2. If the user expresses thoughts of suicide, self-harm, severe crisis, or immediate danger, lead immediately with Indian Crisis Helplines: Tele-MANAS (14416 / 1800-891-4416), KIRAN (1800-599-0019), Vandrevala Foundation (+91 9999 666 555), and National Emergency (112).
 3. Keep responses warm, non-judgmental, validating, gentle, concise (2-3 short paragraphs maximum), and easily readable.`;
 
-      const contents = [];
+      // Build conversation contents ensuring clean alternation (user -> model -> user)
+      const contents: Array<{ role: 'user' | 'model'; parts: Array<{ text: string }> }> = [];
+
       if (Array.isArray(history)) {
         for (const item of history) {
-          if (item && item.text) {
+          if (!item || !item.text || typeof item.text !== 'string') continue;
+          const trimmed = item.text.trim();
+          if (!trimmed) continue;
+
+          const role: 'user' | 'model' = item.sender === 'user' ? 'user' : 'model';
+
+          // Prevent consecutive duplicate turns with the same role
+          if (contents.length > 0 && contents[contents.length - 1].role === role) {
+            contents[contents.length - 1].parts[0].text += `\n\n${trimmed}`;
+          } else {
             contents.push({
-              role: item.sender === 'user' ? 'user' : 'model',
-              parts: [{ text: item.text }]
+              role,
+              parts: [{ text: trimmed }]
             });
           }
         }
       }
-      contents.push({
-        role: 'user',
-        parts: [{ text: message }]
-      });
 
-      let response;
-      let usedModel = 'gemini-3.6-flash';
+      // Ensure the history doesn't already end with the exact same user message
+      if (contents.length > 0 && contents[contents.length - 1].role === 'user') {
+        if (contents[contents.length - 1].parts[0].text.trim() === message.trim()) {
+          // It was already present as the last user turn
+        } else {
+          // If previous was user with different text, insert model bridge or merge
+          contents.push({
+            role: 'model',
+            parts: [{ text: 'I am here with you. Please go on.' }]
+          });
+          contents.push({
+            role: 'user',
+            parts: [{ text: message.trim() }]
+          });
+        }
+      } else {
+        contents.push({
+          role: 'user',
+          parts: [{ text: message.trim() }]
+        });
+      }
+
+      // Gemini API multi-turn requires the first turn to be 'user'
+      if (contents.length > 0 && contents[0].role === 'model') {
+        contents.unshift({
+          role: 'user',
+          parts: [{ text: 'Hello AASRA.' }]
+        });
+      }
+
+      let response: any;
+      let usedModel = 'gemini-3.1-flash-lite';
       try {
-        response = await ai.models.generateContent({
-          model: 'gemini-3.6-flash',
+        response = await generateWithTimeout(ai, 'gemini-3.1-flash-lite', {
           contents,
           config: {
             systemInstruction,
           }
-        });
+        }, 8000);
       } catch (err: any) {
-        console.warn('gemini-3.6-flash attempt failed, trying gemini-3.8-flash:', err?.message);
-        usedModel = 'gemini-3.8-flash';
-        response = await ai.models.generateContent({
-          model: 'gemini-3.8-flash',
+        console.warn('gemini-3.1-flash-lite attempt failed in /api/chat, trying gemini-3.5-flash:', err?.message);
+        usedModel = 'gemini-3.5-flash';
+        response = await generateWithTimeout(ai, 'gemini-3.5-flash', {
           contents,
           config: {
             systemInstruction,
           }
-        });
+        }, 8000);
       }
 
       const replyText = response.text || getClinicalFallbackResponse(message);

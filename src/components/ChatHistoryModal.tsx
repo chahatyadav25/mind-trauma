@@ -9,7 +9,9 @@ import {
   changeChatPin,
   clearAllChatHistory,
   formatSessionDateTime,
-  autoGenerateTitle
+  autoGenerateTitle,
+  getActiveSessionPin,
+  setActiveSessionPin
 } from '../utils/chatStorage';
 import {
   Lock,
@@ -85,15 +87,17 @@ export const ChatHistoryModal: React.FC<ChatHistoryModalProps> = ({
     }
 
     const configured = isPinConfigured();
+    const cachedPin = activePin || getActiveSessionPin();
 
     if (!configured) {
       setCurrentView('setup');
       setSetupPin('');
       setConfirmPin('');
       setErrorMessage(null);
-    } else if (activePin) {
-      // Already unlocked in memory during this session
-      loadSessionsWithPin(activePin);
+    } else if (cachedPin) {
+      // Already unlocked in memory / sessionStorage during this tab session
+      setActivePin(cachedPin);
+      loadSessionsWithPin(cachedPin);
     } else {
       setCurrentView('unlock');
       setUnlockPin('');
@@ -133,6 +137,7 @@ export const ChatHistoryModal: React.FC<ChatHistoryModalProps> = ({
 
       setSessions(loaded);
       setActivePin(pin);
+      setActiveSessionPin(pin);
       setCurrentView('list');
     } catch (err: any) {
       console.error(err);
@@ -178,6 +183,7 @@ export const ChatHistoryModal: React.FC<ChatHistoryModalProps> = ({
       }
 
       setActivePin(setupPin);
+      setActiveSessionPin(setupPin);
       setSessions(initialSessions);
       setSuccessMessage('PIN configured successfully! Your conversations are now protected.');
       setTimeout(() => {
@@ -243,6 +249,7 @@ export const ChatHistoryModal: React.FC<ChatHistoryModalProps> = ({
       }
 
       setActivePin(newPinInput);
+      setActiveSessionPin(newPinInput);
       setSuccessMessage('PIN changed successfully.');
       setCurrentPinInput('');
       setNewPinInput('');
@@ -310,6 +317,7 @@ export const ChatHistoryModal: React.FC<ChatHistoryModalProps> = ({
     clearAllChatHistory(alsoResetPinOnDelete);
     setSessions([]);
     setActivePin('');
+    setActiveSessionPin(null);
     onNewChat();
 
     if (alsoResetPinOnDelete) {
