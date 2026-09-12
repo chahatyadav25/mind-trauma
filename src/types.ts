@@ -72,7 +72,7 @@ export interface ResourceItem {
 export interface AssessmentRecord {
   id: string;
   date: string;
-  score: number; // PC-PTSD-5 score
+  score: number; // Assessment score (0 to 5)
   total: number;
   isPositive: boolean;
   statusText: string;
@@ -82,6 +82,8 @@ export interface AssessmentRecord {
   gad7Score?: number;
   gad7Severity?: Gad7Severity;
   riskLevel?: RiskLevel;
+  dateKey?: string; // e.g. 'YYYY-MM-DD'
+  timestamp?: number;
 }
 
 export interface ChatMessage {
@@ -136,4 +138,5 @@ export interface WeeklyTrendDay {
   isToday: boolean;
   isFuture: boolean;
   checkIn?: DailyCheckIn;
+  assessment?: AssessmentRecord;
 }

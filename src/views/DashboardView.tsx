@@ -1,11 +1,8 @@
 import React from 'react';
-import { ViewId, DailyCheckIn } from '../types';
+import { ViewId, AssessmentRecord } from '../types';
 import { 
-  getCurrentWeekDays, 
-  formatDateKey, 
-  formatDisplayDate, 
-  MOOD_OPTIONS, 
-  isCheckInSupportNeeded 
+  getWeeklyAssessmentDays, 
+  formatDateKey 
 } from '../data/screeningData';
 import { WeeklyMoodGraph } from '../components/WeeklyMoodGraph';
 import { 
@@ -19,53 +16,52 @@ import {
   ShieldCheck, 
   PhoneCall,
   Activity,
-  Calendar,
   Heart,
   Edit3,
-  Clock,
   Sparkles
 } from 'lucide-react';
 
 interface DashboardViewProps {
   onNavigate: (view: ViewId) => void;
-  checkIns: DailyCheckIn[];
-  onOpenCheckIn: () => void;
-  onOpenPreviousCheckIns: () => void;
+  assessments: AssessmentRecord[];
+  onStartAssessment: () => void;
   onOpenGrounding?: () => void;
   onOpenCrisis?: () => void;
 }
 
 export const DashboardView: React.FC<DashboardViewProps> = ({ 
   onNavigate,
-  checkIns,
-  onOpenCheckIn,
-  onOpenPreviousCheckIns,
+  assessments,
+  onStartAssessment,
   onOpenGrounding,
   onOpenCrisis
 }) => {
   const todayKey = formatDateKey(new Date());
-  const todayCheckIn = checkIns.find(c => c.date === todayKey);
-  const weeklyDays = getCurrentWeekDays(checkIns, new Date());
+  const todayAssessment = assessments.find(a => a.dateKey === todayKey);
+  const weeklyDays = getWeeklyAssessmentDays(assessments, new Date());
 
   // Compute weekly statistics
-  const recordedWeeklyDays = weeklyDays.filter(d => d.checkIn);
+  const recordedWeeklyDays = weeklyDays.filter(d => d.assessment);
   const numericScores = recordedWeeklyDays
-    .map(d => d.checkIn?.mood)
-    .filter((m): m is 1 | 2 | 3 | 4 | 5 => typeof m === 'number');
+    .map(d => d.assessment?.score)
+    .filter((s): s is number => typeof s === 'number');
 
-  const avgMoodScore = numericScores.length > 0 
+  const avgScore = numericScores.length > 0 
     ? (numericScores.reduce((a, b) => a + b, 0) / numericScores.length).toFixed(1)
     : null;
 
-  const latestCheckIn = checkIns.length > 0 
-    ? [...checkIns].sort((a, b) => b.timestamp - a.timestamp)[0] 
+  const latestAssessment = assessments.length > 0 
+    ? [...assessments].sort((a, b) => (b.timestamp || 0) - (a.timestamp || 0))[0] 
     : undefined;
 
-  const latestNeedsSupport = latestCheckIn ? isCheckInSupportNeeded(latestCheckIn) : false;
+  const latestNeedsSupport = latestAssessment 
+    ? (latestAssessment.score >= 3 || (latestAssessment.gad7Score !== undefined && latestAssessment.gad7Score >= 10) || latestAssessment.riskLevel !== 'routine')
+    : false;
 
   const firstDay = weeklyDays[0];
   const lastDay = weeklyDays[6];
   const weekSpanText = `${firstDay.dayName}, ${firstDay.dateStr} – ${lastDay.dayName}, ${lastDay.dateStr}`;
+
   return (
     <div className="flex flex-col w-full max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
       {/* Welcome Top Banner */}
@@ -85,20 +81,11 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
             Welcome back
           </h1>
           <p className="text-xs sm:text-sm text-gray-600 mt-1">
-            Your clinical screener records and coping tools are stored locally on your device with strict confidentiality.
+            Your well-being assessment records and coping tools are stored locally on your device with strict confidentiality.
           </p>
         </div>
 
         <div className="flex flex-wrap items-center gap-2.5 shrink-0">
-          <button
-            type="button"
-            onClick={() => onNavigate('intro')}
-            className="px-4 py-2.5 rounded-xl bg-black text-white text-xs sm:text-sm font-semibold shadow-sm hover:bg-gray-800 transition-colors flex items-center gap-1.5 cursor-pointer"
-          >
-            <PlusCircle className="w-4 h-4" />
-            <span>New Screener</span>
-          </button>
-
           <button
             type="button"
             onClick={() => onNavigate('chat')}
@@ -114,22 +101,30 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
         <div className="bg-white p-5 rounded-2xl border border-gray-200 shadow-2xs flex items-center gap-3.5">
           <div className="w-13 h-13 rounded-2xl bg-red-100 text-red-700 flex items-center justify-center font-bold text-xl border border-red-200 font-display shrink-0">
-            4/5
+            {latestAssessment ? `${latestAssessment.score}/5` : '4/5'}
           </div>
           <div>
-            <span className="text-xs text-gray-500 block">Latest PC-PTSD-5</span>
-            <span className="text-sm font-bold text-gray-900 font-display block">Positive Screen</span>
-            <span className="text-[11px] text-gray-400 block mt-0.5">Oct 24 • VA Cut-point ≥4</span>
+            <span className="text-xs text-gray-500 block">Latest Well-Being Check</span>
+            <span className="text-sm font-bold text-gray-900 font-display block">
+              {latestAssessment ? latestAssessment.statusText : 'Positive Screen'}
+            </span>
+            <span className="text-[11px] text-gray-400 block mt-0.5">
+              {latestAssessment ? latestAssessment.date : 'Oct 24'} • Cut-point ≥3
+            </span>
           </div>
         </div>
 
         <div className="bg-white p-5 rounded-2xl border border-gray-200 shadow-2xs flex items-center gap-3.5">
           <div className="w-13 h-13 rounded-2xl bg-purple-50 text-purple-700 flex items-center justify-center font-bold text-xl border border-purple-200 font-display shrink-0">
-            14/21
+            {latestAssessment?.gad7Score !== undefined ? `${latestAssessment.gad7Score}/21` : '14/21'}
           </div>
           <div>
             <span className="text-xs text-gray-500 block">Latest GAD-7</span>
-            <span className="text-sm font-bold text-gray-900 font-display block">Moderate Anxiety</span>
+            <span className="text-sm font-bold text-gray-900 font-display block">
+              {latestAssessment?.gad7Severity 
+                ? `${latestAssessment.gad7Severity.charAt(0).toUpperCase() + latestAssessment.gad7Severity.slice(1)} Anxiety` 
+                : 'Moderate Anxiety'}
+            </span>
             <span className="text-[11px] text-purple-700 font-medium block mt-0.5">Referral flag (≥10)</span>
           </div>
         </div>
@@ -172,44 +167,44 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
               </span>
             </div>
             <h2 className="text-xl sm:text-2xl font-bold text-gray-950 font-display">
-              Weekly Mood &amp; Wellbeing Trend
+              Weekly Well-Being &amp; Mood Trend
             </h2>
             <p className="text-xs sm:text-sm text-gray-600 mt-0.5">
-              Daily check-ins tracking your emotional states throughout the current week. Missing days are unrecorded without guesswork.
+              Daily well-being assessments tracking your score throughout the current week. Missing days are unrecorded without guesswork.
             </p>
           </div>
 
           <div className="flex flex-wrap items-center gap-2.5 shrink-0">
-            {todayCheckIn ? (
+            {todayAssessment ? (
               <div className="flex items-center gap-2">
                 <span className="px-3 py-1.5 rounded-xl bg-teal-50 border border-teal-200/80 text-xs font-semibold text-teal-900 flex items-center gap-1.5">
                   <Check className="w-3.5 h-3.5 text-teal-700" />
-                  <span>Logged Today ({todayCheckIn.mood !== null ? `${todayCheckIn.mood}/5` : 'Recorded'})</span>
+                  <span>Logged Today ({todayAssessment.score}/5)</span>
                 </span>
                 <button
                   type="button"
-                  onClick={onOpenCheckIn}
+                  onClick={onStartAssessment}
                   className="px-3 py-1.5 rounded-xl bg-gray-100 hover:bg-gray-200 text-gray-800 text-xs font-semibold transition-colors flex items-center gap-1.5 cursor-pointer"
-                  title="Update today's responses"
+                  title="Retake today's well-being check"
                 >
                   <Edit3 className="w-3.5 h-3.5" />
-                  <span>Update</span>
+                  <span>Retake Check</span>
                 </button>
               </div>
             ) : (
               <button
                 type="button"
-                onClick={onOpenCheckIn}
+                onClick={onStartAssessment}
                 className="px-4 py-2 rounded-xl bg-teal-700 hover:bg-teal-800 text-white text-xs sm:text-sm font-semibold shadow-xs transition-colors flex items-center gap-1.5 cursor-pointer"
               >
                 <PlusCircle className="w-4 h-4" />
-                <span>Daily Check-in</span>
+                <span>Daily Well-Being Check</span>
               </button>
             )}
 
             <button
               type="button"
-              onClick={onOpenPreviousCheckIns}
+              onClick={() => onNavigate('history')}
               className="px-3.5 py-2 rounded-xl bg-white border border-gray-200 hover:bg-gray-50 text-gray-700 text-xs sm:text-sm font-semibold transition-colors shadow-2xs flex items-center gap-1.5 cursor-pointer"
             >
               <History className="w-3.5 h-3.5 text-gray-500" />
@@ -219,39 +214,39 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
         </div>
 
         {/* Weekly Mood SVG Graph */}
-        <WeeklyMoodGraph days={weeklyDays} onOpenCheckIn={onOpenCheckIn} />
+        <WeeklyMoodGraph days={weeklyDays} onStartAssessment={onStartAssessment} />
 
         {/* Weekly Summary Highlights Strip */}
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 mt-5 pt-4 border-t border-gray-100 text-xs">
           <div className="bg-gray-50/80 p-3 rounded-xl border border-gray-100 flex items-center justify-between">
             <span className="text-gray-500">Check-in Consistency</span>
             <span className="font-bold text-gray-900 font-display">
-              {recordedWeeklyDays.length} / 7 Days Logged
+              {recordedWeeklyDays.length} / 7 Days Completed
             </span>
           </div>
 
           <div className="bg-gray-50/80 p-3 rounded-xl border border-gray-100 flex items-center justify-between">
-            <span className="text-gray-500">Average Mood (1–5)</span>
+            <span className="text-gray-500">Average Well-Being (0–5)</span>
             <span className="font-bold text-teal-800 font-display">
-              {avgMoodScore ? `${avgMoodScore} / 5` : 'No scores yet'}
+              {avgScore ? `${avgScore} / 5` : 'No scores yet'}
             </span>
           </div>
 
           <div className="bg-gray-50/80 p-3 rounded-xl border border-gray-100 flex items-center justify-between">
             <span className="text-gray-500">Clinical Evaluation</span>
             <span className="font-medium text-gray-600">
-              Non-Diagnostic Tracker
+              Validated Assessment
             </span>
           </div>
         </div>
 
-        {/* Supportive Prompt if latest check-in indicated distress */}
+        {/* Supportive Prompt if latest assessment indicated elevated distress */}
         {latestNeedsSupport && (
           <div className="mt-4 p-4 rounded-2xl bg-amber-50/80 border border-amber-200/80 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 text-xs">
             <div className="flex items-center gap-2.5 text-amber-950">
               <Sparkles className="w-4 h-4 text-amber-700 shrink-0" />
               <span>
-                Your recent check-in indicated noticeable stress or heavy feelings. Be gentle with your body today.
+                Your recent assessment indicated noticeable distress. Be gentle with yourself today and consider somatic grounding.
               </span>
             </div>
             <div className="flex items-center gap-2 shrink-0">
@@ -302,10 +297,10 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
                 </div>
                 <div className="flex-1 min-w-0">
                   <span className="text-xs sm:text-sm font-bold text-gray-900 block font-display">
-                    1. PC-PTSD-5 Screening Completed
+                    1. Daily Well-Being Check Completed
                   </span>
                   <span className="text-xs text-gray-500">
-                    Validated screener recorded with 4/5 affirmative criteria
+                    Validated assessment recorded with {latestAssessment ? `${latestAssessment.score}/5` : '4/5'} score
                   </span>
                 </div>
                 <span className="px-2.5 py-0.5 rounded-full bg-teal-50 text-teal-800 text-xs font-semibold border border-teal-200 shrink-0">
@@ -389,7 +384,7 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
                 </div>
                 <div>
                   <h4 className="text-xs sm:text-sm font-bold text-gray-900 font-display">
-                    Screener History
+                    Assessment History
                   </h4>
                   <p className="text-xs text-gray-500">Timeline &amp; PDF export</p>
                 </div>

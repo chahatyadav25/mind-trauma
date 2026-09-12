@@ -393,6 +393,163 @@ export function getMondayOfWeek(d: Date): Date {
   return date;
 }
 
+export function getWeeklyAssessmentDays(assessments: AssessmentRecord[], refDate = new Date()): WeeklyTrendDay[] {
+  const monday = getMondayOfWeek(refDate);
+  const todayKey = formatDateKey(refDate);
+  const days: WeeklyTrendDay[] = [];
+
+  const shortNames = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
+  const fullNames = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'];
+
+  for (let i = 0; i < 7; i++) {
+    const current = new Date(monday);
+    current.setDate(monday.getDate() + i);
+    current.setHours(12, 0, 0, 0);
+    const dateStr = formatDateKey(current);
+    const isToday = dateStr === todayKey;
+    const isFuture = dateStr > todayKey;
+
+    const assessment = assessments.find(a => {
+      if (a.dateKey) return a.dateKey === dateStr;
+      try {
+        const parsed = new Date(a.date);
+        if (!isNaN(parsed.getTime())) {
+          return formatDateKey(parsed) === dateStr;
+        }
+      } catch {}
+      return false;
+    });
+
+    days.push({
+      dayName: shortNames[i],
+      fullDayName: fullNames[i],
+      dateStr,
+      dayOfMonth: current.getDate(),
+      isToday,
+      isFuture,
+      assessment
+    });
+  }
+
+  return days;
+}
+
+const ASSESSMENT_STORAGE_KEY = 'mindtrauma_assessment_history';
+
+export function generateSeedAssessments(refDate = new Date()): AssessmentRecord[] {
+  const monday = getMondayOfWeek(refDate);
+  const todayKey = formatDateKey(refDate);
+
+  const monDate = new Date(monday);
+  const monKey = formatDateKey(monDate);
+
+  const tueDate = new Date(monday);
+  tueDate.setDate(monday.getDate() + 1);
+  const tueKey = formatDateKey(tueDate);
+
+  const list: AssessmentRecord[] = [
+    {
+      id: 'rec-initial-1',
+      date: 'Oct 24, 2025',
+      dateKey: '2025-10-24',
+      timestamp: new Date('2025-10-24').getTime(),
+      score: 4,
+      total: 5,
+      isPositive: true,
+      statusText: 'Positive PTSD Screen',
+      summary: 'Reported Criterion A trauma exposure, intrusive memories, avoidance, and hypervigilance. GAD-7 score: 14 (Moderate Anxiety). Flagged for trauma-informed referral.',
+      answers: [true, true, true, false, true],
+      traumaExposure: true,
+      gad7Score: 14,
+      gad7Severity: 'moderate',
+      riskLevel: 'routine'
+    },
+    {
+      id: 'rec-initial-2',
+      date: 'Sep 12, 2025',
+      dateKey: '2025-09-12',
+      timestamp: new Date('2025-09-12').getTime(),
+      score: 3,
+      total: 5,
+      isPositive: true,
+      statusText: 'Borderline Screen',
+      summary: 'Avoidance and hyperarousal noted during workplace transition. GAD-7 score: 8 (Mild Anxiety). Somatic grounding recommended.',
+      answers: [true, true, true, false, false],
+      traumaExposure: true,
+      gad7Score: 8,
+      gad7Severity: 'mild',
+      riskLevel: 'routine'
+    }
+  ];
+
+  if (monKey !== todayKey) {
+    list.unshift({
+      id: `seed-assess-${monKey}`,
+      date: formatDisplayDate(monDate),
+      dateKey: monKey,
+      timestamp: monDate.getTime() + 9 * 3600 * 1000,
+      score: 4,
+      total: 5,
+      isPositive: true,
+      statusText: 'Positive Screen',
+      summary: 'Reported intrusive memories, situational avoidance, and hyperarousal. Recommended somatic grounding.',
+      answers: [true, true, true, false, true],
+      traumaExposure: true,
+      gad7Score: 12,
+      gad7Severity: 'moderate',
+      riskLevel: 'routine'
+    });
+  }
+
+  if (tueKey !== todayKey && refDate.getDay() !== 1 && refDate.getDay() !== 2) {
+    list.unshift({
+      id: `seed-assess-${tueKey}`,
+      date: formatDisplayDate(tueDate),
+      dateKey: tueKey,
+      timestamp: tueDate.getTime() + 10 * 3600 * 1000,
+      score: 3,
+      total: 5,
+      isPositive: true,
+      statusText: 'Moderate Screen',
+      summary: 'Improvement in emotional grounding; mild hyperarousal reported during evening hours.',
+      answers: [true, false, true, false, true],
+      traumaExposure: true,
+      gad7Score: 9,
+      gad7Severity: 'mild',
+      riskLevel: 'routine'
+    });
+  }
+
+  return list;
+}
+
+export function loadStoredAssessments(): AssessmentRecord[] {
+  try {
+    const raw = localStorage.getItem(ASSESSMENT_STORAGE_KEY);
+    if (raw) {
+      const parsed = JSON.parse(raw);
+      if (Array.isArray(parsed) && parsed.length > 0) {
+        return parsed;
+      }
+    }
+  } catch (e) {
+    console.warn('Could not read assessments from localStorage:', e);
+  }
+  const seed = generateSeedAssessments();
+  try {
+    localStorage.setItem(ASSESSMENT_STORAGE_KEY, JSON.stringify(seed));
+  } catch {}
+  return seed;
+}
+
+export function saveStoredAssessments(assessments: AssessmentRecord[]): void {
+  try {
+    localStorage.setItem(ASSESSMENT_STORAGE_KEY, JSON.stringify(assessments));
+  } catch (e) {
+    console.warn('Could not save assessments to localStorage:', e);
+  }
+}
+
 export function getCurrentWeekDays(checkIns: DailyCheckIn[], refDate = new Date()): WeeklyTrendDay[] {
   const monday = getMondayOfWeek(refDate);
   const todayKey = formatDateKey(refDate);

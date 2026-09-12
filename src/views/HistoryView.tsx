@@ -1,6 +1,5 @@
 import React, { useState } from 'react';
-import { ViewId, AssessmentRecord, DailyCheckIn } from '../types';
-import { MOOD_OPTIONS } from '../data/screeningData';
+import { ViewId, AssessmentRecord } from '../types';
 import { 
   FileDown, 
   Calendar, 
@@ -9,7 +8,6 @@ import {
   ShieldCheck, 
   PlusCircle, 
   Activity, 
-  Heart, 
   ClipboardList,
   Bot,
   Lock
@@ -20,19 +18,14 @@ interface HistoryViewProps {
   onClearHistory: () => void;
   onNavigate: (view: ViewId) => void;
   onInspectRecord: (rec: AssessmentRecord) => void;
-  checkIns?: DailyCheckIn[];
-  onOpenCheckIn?: () => void;
 }
 
 export const HistoryView: React.FC<HistoryViewProps> = ({ 
   historyList,
   onClearHistory,
   onNavigate, 
-  onInspectRecord,
-  checkIns = [],
-  onOpenCheckIn
+  onInspectRecord
 }) => {
-  const [activeTab, setActiveTab] = useState<'screeners' | 'checkins'>('screeners');
   const [showExportBanner, setShowExportBanner] = useState(false);
 
   const handleExportPdf = () => {
@@ -43,7 +36,7 @@ export const HistoryView: React.FC<HistoryViewProps> = ({
   };
 
   const handleConfirmClear = () => {
-    if (window.confirm('Are you sure you want to securely clear your clinical screening history from this browser?')) {
+    if (window.confirm('Are you sure you want to securely clear your clinical assessment history from this browser?')) {
       onClearHistory();
     }
   };
@@ -58,11 +51,11 @@ export const HistoryView: React.FC<HistoryViewProps> = ({
             </span>
             <span className="text-gray-300">•</span>
             <span className="text-xs text-teal-800 bg-teal-50 px-2.5 py-0.5 rounded-full border border-teal-200/60 font-medium">
-              PC-PTSD-5 &amp; GAD-7 Longitudinal Logs
+              Well-Being &amp; Anxiety Longitudinal Logs
             </span>
           </div>
           <h1 className="text-2xl sm:text-3xl font-bold text-gray-950 font-display">
-            Assessment &amp; Screening History
+            Assessment &amp; Well-Being History
           </h1>
           <p className="text-xs sm:text-sm text-gray-500 mt-1">
             Review your past symptom evaluations over time and generate reports for provider discussions.
@@ -72,11 +65,11 @@ export const HistoryView: React.FC<HistoryViewProps> = ({
         <div className="flex items-center gap-2.5">
           <button
             type="button"
-            onClick={() => onNavigate('intro')}
+            onClick={() => onNavigate('assessment')}
             className="px-4 py-2.5 rounded-xl bg-black text-white text-xs sm:text-sm font-semibold shadow-xs hover:bg-gray-800 transition-colors flex items-center gap-1.5 cursor-pointer"
           >
             <PlusCircle className="w-4 h-4" />
-            <span>New Screener</span>
+            <span>Daily Well-Being Check</span>
           </button>
 
           <button
@@ -90,33 +83,12 @@ export const HistoryView: React.FC<HistoryViewProps> = ({
         </div>
       </div>
 
-      {/* Tabs Selector: Clinical Screeners vs Daily Check-ins */}
+      {/* Primary Selector Row */}
       <div className="flex items-center gap-3 mb-6 border-b border-gray-200 pb-3">
-        <button
-          type="button"
-          onClick={() => setActiveTab('screeners')}
-          className={`px-4 py-2 rounded-xl text-xs sm:text-sm font-semibold transition-all flex items-center gap-2 cursor-pointer ${
-            activeTab === 'screeners'
-              ? 'bg-black text-white shadow-xs'
-              : 'bg-white text-gray-600 hover:bg-gray-100 border border-gray-200'
-          }`}
-        >
+        <div className="px-4 py-2 rounded-xl text-xs sm:text-sm font-semibold bg-black text-white shadow-xs flex items-center gap-2">
           <ClipboardList className="w-4 h-4" />
-          <span>Clinical Screeners ({historyList.length})</span>
-        </button>
-
-        <button
-          type="button"
-          onClick={() => setActiveTab('checkins')}
-          className={`px-4 py-2 rounded-xl text-xs sm:text-sm font-semibold transition-all flex items-center gap-2 cursor-pointer ${
-            activeTab === 'checkins'
-              ? 'bg-teal-700 text-white shadow-xs'
-              : 'bg-white text-gray-600 hover:bg-gray-100 border border-gray-200'
-          }`}
-        >
-          <Heart className="w-4 h-4 text-teal-300" />
-          <span>Daily Mood Check-ins ({checkIns.length})</span>
-        </button>
+          <span>Well-Being Assessments ({historyList.length})</span>
+        </div>
 
         <button
           type="button"
@@ -143,180 +115,96 @@ export const HistoryView: React.FC<HistoryViewProps> = ({
         </div>
       )}
 
-      {activeTab === 'screeners' ? (
-        historyList.length > 0 ? (
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-5 mb-8">
-            {historyList.map((rec) => (
-              <div
-                key={rec.id}
-                className="bg-white p-6 rounded-3xl border border-gray-200 shadow-2xs hover:shadow-xs transition-shadow flex flex-col justify-between"
-              >
-                <div>
-                  <div className="flex flex-wrap items-center justify-between gap-2 mb-3">
-                    <div className="flex flex-wrap items-center gap-2">
-                      <span
-                        className={`px-3 py-1 rounded-full text-xs font-bold font-display ${
-                          rec.score >= 3
-                            ? 'bg-red-100 text-red-700 border border-red-200'
-                            : 'bg-teal-50 text-teal-800 border border-teal-100'
-                        }`}
-                      >
-                        PTSD: {rec.score} / {rec.total}
-                      </span>
-
-                      {typeof rec.gad7Score === 'number' && (
-                        <span className="px-3 py-1 rounded-full text-xs font-bold font-display bg-purple-50 text-purple-900 border border-purple-200 flex items-center gap-1">
-                          <Activity className="w-3 h-3 text-purple-600" />
-                          <span>GAD-7: {rec.gad7Score}/21</span>
-                        </span>
-                      )}
-                    </div>
-
-                    <div className="flex items-center gap-1.5 text-xs text-gray-500 font-medium">
-                      <Calendar className="w-3.5 h-3.5 text-gray-400" />
-                      <span>{rec.date}</span>
-                    </div>
-                  </div>
-
-                  <span className="text-xs font-bold text-gray-900 font-display block mb-1.5">
-                    {rec.statusText}
-                  </span>
-
-                  <p className="text-xs sm:text-sm text-gray-600 mb-4 leading-relaxed">{rec.summary}</p>
-                </div>
-
-                <div className="flex items-center justify-between text-xs pt-3 border-t border-gray-100">
-                  <span className="text-gray-400 font-medium">PC-PTSD-5 &amp; GAD-7</span>
-                  <button
-                    type="button"
-                    onClick={() => onInspectRecord(rec)}
-                    className="text-black font-semibold hover:underline inline-flex items-center gap-1 cursor-pointer"
-                  >
-                    <span>View Full Clinical Result</span>
-                    <ArrowRight className="w-3.5 h-3.5" />
-                  </button>
-                </div>
-              </div>
-            ))}
-          </div>
-        ) : (
-          <div className="bg-white p-12 rounded-3xl border border-gray-200 text-center mb-8">
-            <p className="text-sm text-gray-500 mb-4">All screening records have been securely cleared from local storage.</p>
-            <button
-              onClick={() => onNavigate('consent')}
-              className="px-6 py-3 bg-black text-white text-xs sm:text-sm font-semibold rounded-xl hover:bg-gray-800 transition-colors cursor-pointer"
+      {/* Clinical Screeners Tab */}
+      {historyList.length > 0 ? (
+        <div className="space-y-4 mb-8">
+          {historyList.map((record) => (
+            <div
+              key={record.id}
+              className="p-5 sm:p-6 rounded-3xl border border-gray-200 bg-white shadow-2xs hover:border-gray-300 transition-all flex flex-col md:flex-row md:items-center justify-between gap-5 group"
             >
-              Start a new assessment
-            </button>
-          </div>
-        )
-      ) : (
-        /* Daily Mood Check-ins Tab */
-        checkIns.length > 0 ? (
-          <div className="space-y-4 mb-8">
-            {[...checkIns]
-              .sort((a, b) => b.timestamp - a.timestamp)
-              .map((checkIn) => {
-                const moodOpt = checkIn.mood !== null ? MOOD_OPTIONS.find(m => m.score === checkIn.mood) : null;
-                return (
-                  <div
-                    key={checkIn.id}
-                    className="p-5 rounded-3xl border border-gray-200 bg-white shadow-2xs hover:border-teal-200 transition-colors"
+              <div className="flex-1">
+                <div className="flex flex-wrap items-center gap-2 mb-2">
+                  <span className="text-xs text-gray-500 font-medium flex items-center gap-1">
+                    <Calendar className="w-3.5 h-3.5" />
+                    {record.date}
+                  </span>
+                  <span className="text-gray-300">•</span>
+                  <span
+                    className={`px-2.5 py-0.5 rounded-full text-xs font-bold font-display ${
+                      record.isPositive
+                        ? 'bg-red-50 text-red-700 border border-red-200'
+                        : 'bg-emerald-50 text-emerald-700 border border-emerald-200'
+                    }`}
                   >
-                    <div className="flex flex-wrap items-center justify-between gap-2 mb-3 pb-2.5 border-b border-gray-100">
-                      <div className="flex items-center gap-2">
-                        <Calendar className="w-4 h-4 text-teal-700" />
-                        <span className="text-xs sm:text-sm font-bold text-gray-950 font-display">
-                          {checkIn.displayDate}
-                        </span>
-                      </div>
+                    {record.statusText}
+                  </span>
+                  {record.gad7Score !== undefined && (
+                    <span className="px-2.5 py-0.5 rounded-full text-xs font-semibold bg-purple-50 text-purple-700 border border-purple-200">
+                      GAD-7: {record.gad7Score}/21 ({record.gad7Severity})
+                    </span>
+                  )}
+                  {record.riskLevel && record.riskLevel !== 'routine' && (
+                    <span className="px-2.5 py-0.5 rounded-full text-xs font-bold bg-amber-50 text-amber-800 border border-amber-300">
+                      Risk: {record.riskLevel}
+                    </span>
+                  )}
+                </div>
 
-                      <div className="flex items-center gap-2">
-                        {moodOpt ? (
-                          <span className="px-3 py-1 rounded-full text-xs font-bold font-display bg-teal-50 text-teal-800 border border-teal-200/80 flex items-center gap-1.5">
-                            <span className="text-sm">{moodOpt.emoji}</span>
-                            <span>{checkIn.moodLabel}</span>
-                            <span className="text-teal-600/80 font-normal">({checkIn.mood}/5)</span>
-                          </span>
-                        ) : (
-                          <span className="px-3 py-1 rounded-full text-xs font-semibold bg-gray-100 text-gray-700 border border-gray-200">
-                            Mood: Prefer not to say
-                          </span>
-                        )}
-                      </div>
-                    </div>
+                <div className="flex items-baseline gap-2 mb-2">
+                  <span className="text-2xl font-bold font-display text-gray-950">
+                    {record.score}
+                  </span>
+                  <span className="text-xs text-gray-500 font-medium">
+                    out of {record.total} Affirmative Criteria
+                  </span>
+                </div>
 
-                    <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 text-xs mb-3">
-                      <div className="bg-gray-50 p-2.5 rounded-xl border border-gray-100">
-                        <span className="text-[11px] text-gray-500 block">Day Overall</span>
-                        <span className="font-semibold text-gray-900 block mt-0.5">
-                          {checkIn.dayOverall}
-                        </span>
-                      </div>
+                <p className="text-xs sm:text-sm text-gray-600 leading-relaxed max-w-3xl">
+                  {record.summary}
+                </p>
+              </div>
 
-                      <div className="bg-gray-50 p-2.5 rounded-xl border border-gray-100">
-                        <span className="text-[11px] text-gray-500 block">Stress Level</span>
-                        <span className="font-semibold text-gray-900 block mt-0.5">
-                          {checkIn.stressLevel}
-                        </span>
-                      </div>
-
-                      <div className="bg-gray-50 p-2.5 rounded-xl border border-gray-100">
-                        <span className="text-[11px] text-gray-500 block">Recent Sleep</span>
-                        <span className="font-semibold text-gray-900 block mt-0.5">
-                          {checkIn.sleepQuality}
-                        </span>
-                      </div>
-
-                      <div className="bg-gray-50 p-2.5 rounded-xl border border-gray-100">
-                        <span className="text-[11px] text-gray-500 block">Support Connection</span>
-                        <span className="font-semibold text-gray-900 block mt-0.5">
-                          {checkIn.feltSupported}
-                        </span>
-                      </div>
-                    </div>
-
-                    {checkIn.notes && (
-                      <div className="p-3 bg-teal-50/50 rounded-xl border border-teal-100 text-xs text-teal-950">
-                        <span className="font-bold text-teal-800 mr-1.5">Reflection note:</span>
-                        <span className="italic">{checkIn.notes}</span>
-                      </div>
-                    )}
-                  </div>
-                );
-              })}
-          </div>
-        ) : (
-          <div className="bg-white p-12 rounded-3xl border border-gray-200 text-center mb-8">
-            <p className="text-sm text-gray-500 mb-4">No daily check-ins recorded yet.</p>
-            {onOpenCheckIn && (
-              <button
-                type="button"
-                onClick={onOpenCheckIn}
-                className="px-6 py-3 bg-black text-white text-xs sm:text-sm font-semibold rounded-xl hover:bg-gray-800 transition-colors cursor-pointer inline-flex items-center gap-2"
-              >
-                <PlusCircle className="w-4 h-4" />
-                <span>Complete your first check-in</span>
-              </button>
-            )}
-          </div>
-        )
+              <div className="flex items-center gap-3 shrink-0 pt-3 md:pt-0 border-t md:border-t-0 border-gray-100">
+                <button
+                  type="button"
+                  onClick={() => onInspectRecord(record)}
+                  className="px-4 py-2 rounded-xl bg-gray-100 hover:bg-gray-200 text-gray-800 text-xs font-semibold flex items-center gap-1.5 transition-colors cursor-pointer"
+                >
+                  <span>Review Clinical Synthesis</span>
+                  <ArrowRight className="w-3.5 h-3.5" />
+                </button>
+              </div>
+            </div>
+          ))}
+        </div>
+      ) : (
+        <div className="bg-white p-12 rounded-3xl border border-gray-200 text-center mb-8">
+          <p className="text-sm text-gray-500 mb-4">All assessment records have been securely cleared from local storage.</p>
+          <button
+            onClick={() => onNavigate('consent')}
+            className="px-6 py-3 bg-black text-white text-xs sm:text-sm font-semibold rounded-xl hover:bg-gray-800 transition-colors cursor-pointer"
+          >
+            Start a new assessment
+          </button>
+        </div>
       )}
 
-      {/* Privacy Assurance Bar */}
-      <div className="p-5 rounded-2xl bg-white border border-gray-200 flex flex-col sm:flex-row items-center justify-between gap-3 text-xs text-gray-500 shadow-2xs">
-        <span className="flex items-center gap-1.5 font-medium">
-          <ShieldCheck className="w-4 h-4 text-teal-700" />
-          Data is retained only within your local browser session storage.
-        </span>
+      {/* Footer controls & local security reminder */}
+      <div className="p-6 rounded-3xl bg-gray-50/80 border border-gray-200 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 text-xs">
+        <div className="flex items-center gap-2 text-gray-500">
+          <ShieldCheck className="w-4 h-4 text-teal-700 shrink-0" />
+          <span>Records are stored in your device's browser memory and are never uploaded to commercial tracking servers.</span>
+        </div>
 
         {historyList.length > 0 && (
           <button
+            type="button"
             onClick={handleConfirmClear}
-            className="text-red-600 hover:text-red-700 font-semibold underline inline-flex items-center gap-1 cursor-pointer"
+            className="text-red-700 hover:text-red-800 hover:bg-red-50 px-3 py-1.5 rounded-lg font-semibold flex items-center gap-1.5 transition-colors cursor-pointer shrink-0"
           >
             <Trash2 className="w-3.5 h-3.5" />
-            <span>Clear local screening history</span>
+            <span>Clear History</span>
           </button>
         )}
       </div>

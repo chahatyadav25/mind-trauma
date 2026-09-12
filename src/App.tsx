@@ -1,13 +1,12 @@
 import React, { useState, useEffect } from 'react';
-import { ViewId, AssessmentCompositeResult, AssessmentRecord, DailyCheckIn } from './types';
+import { ViewId, AssessmentCompositeResult, AssessmentRecord } from './types';
 import { 
   calculatePcPtsd5Score, 
   calculateGad7Score, 
   getGad7Severity, 
   determineRiskLevel, 
-  INITIAL_HISTORY,
-  loadStoredCheckIns,
-  saveStoredCheckIns,
+  loadStoredAssessments,
+  saveStoredAssessments,
   formatDateKey
 } from './data/screeningData';
 
@@ -15,8 +14,6 @@ import { Header } from './components/Header';
 import { BottomNav } from './components/BottomNav';
 import { CrisisModal } from './components/CrisisModal';
 import { GroundingModal } from './components/GroundingModal';
-import { DailyCheckInModal } from './components/DailyCheckInModal';
-import { PreviousCheckInsModal } from './components/PreviousCheckInsModal';
 
 import { LandingView } from './views/LandingView';
 import { ConsentView } from './views/ConsentView';
@@ -43,25 +40,8 @@ export default function App() {
   const [urgentDistress, setUrgentDistress] = useState<boolean | null>(null);
   const [selfHarmOrDanger, setSelfHarmOrDanger] = useState<boolean | null>(null);
 
-  // Saved Screening History
-  const [historyList, setHistoryList] = useState<AssessmentRecord[]>(INITIAL_HISTORY);
-
-  // Daily Check-ins State (persisted locally)
-  const [checkIns, setCheckIns] = useState<DailyCheckIn[]>(() => loadStoredCheckIns());
-  const [isCheckInModalOpen, setIsCheckInModalOpen] = useState<boolean>(false);
-  const [isPreviousCheckInsModalOpen, setIsPreviousCheckInsModalOpen] = useState<boolean>(false);
-
-  const handleSaveCheckIn = (newCheckIn: DailyCheckIn) => {
-    setCheckIns(prev => {
-      const filtered = prev.filter(c => c.date !== newCheckIn.date);
-      const updated = [newCheckIn, ...filtered];
-      saveStoredCheckIns(updated);
-      return updated;
-    });
-  };
-
-  const todayKey = formatDateKey(new Date());
-  const todayCheckIn = checkIns.find(c => c.date === todayKey);
+  // Saved Screening History (persisted locally and drives the mood/well-being trend)
+  const [historyList, setHistoryList] = useState<AssessmentRecord[]>(() => loadStoredAssessments());
 
   // Computed / Current Composite Assessment Result
   const [currentAssessment, setCurrentAssessment] = useState<AssessmentCompositeResult>({
@@ -141,19 +121,22 @@ export default function App() {
 
     setCurrentAssessment(completed);
 
-    // Save to historical timeline log
+    // Save to historical timeline log and update mood graph data point
     const now = new Date();
+    const dateKey = formatDateKey(now);
     const dateStr = now.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
     const newRecord: AssessmentRecord = {
       id: `rec-${Date.now()}`,
       date: dateStr,
+      dateKey,
+      timestamp: now.getTime(),
       score: ptsdScore,
       total: 5,
       isPositive: ptsdPositive,
-      statusText: !traumaExposure ? 'Trauma Neg (0/5)' : ptsdPositive ? 'Positive PTSD Screen' : 'Lower Indication (0–2)',
+      statusText: !traumaExposure ? 'Trauma Neg (0/5)' : ptsdPositive ? 'Positive Screen' : 'Lower Indication (0–2)',
       summary: !traumaExposure
-        ? `Criterion A trauma exposure was not reported (PC-PTSD-5: 0/5). GAD-7 Anxiety Score: ${gad7Score}/21 (${gad7Severity.toUpperCase()}).`
-        : `Reported PC-PTSD-5 score of ${ptsdScore}/5 and GAD-7 anxiety score of ${gad7Score}/21 (${gad7Severity.toUpperCase()}). ${gad7NeedsReferral ? 'Referral threshold exceeded.' : ''}`,
+        ? `Criterion A trauma exposure was not reported (Score: 0/5). GAD-7 Anxiety Score: ${gad7Score}/21 (${gad7Severity.toUpperCase()}).`
+        : `Reported well-being/assessment score of ${ptsdScore}/5 and GAD-7 anxiety score of ${gad7Score}/21 (${gad7Severity.toUpperCase()}). ${gad7NeedsReferral ? 'Referral threshold exceeded.' : ''}`,
       answers: ptsdAnswers,
       traumaExposure: !!traumaExposure,
       gad7Score,
@@ -161,7 +144,12 @@ export default function App() {
       riskLevel
     };
 
-    setHistoryList(prev => [newRecord, ...prev]);
+    setHistoryList(prev => {
+      const filtered = prev.filter(r => r.dateKey !== dateKey);
+      const updated = [newRecord, ...filtered];
+      saveStoredAssessments(updated);
+      return updated;
+    });
     handleNavigate('results');
   };
 
@@ -198,21 +186,27 @@ export default function App() {
       {/* Main Content Body */}
       <main className="flex-1 flex flex-col relative w-full pt-16 pb-20 md:pb-10 bg-[#F5FAFC]">
         {/* Dynamic View Pane */}
-        <div className="flex-1 flex flex-col w-full">
+        <div className="flex-1 w-full animate-in fade-in duration-200">
           {currentView === 'landing' && (
             <LandingView
+              onStart={handleStartAssessment}
               onNavigate={handleNavigate}
               onOpenCrisis={() => setIsCrisisModalOpen(true)}
+              onOpenGrounding={() => setIsGroundingModalOpen(true)}
             />
           )}
 
           {currentView === 'consent' && (
-            <ConsentView onNavigate={handleNavigate} />
+            <ConsentView
+              onAccept={() => handleNavigate('safety')}
+              onCancel={() => handleNavigate('landing')}
+            />
           )}
 
           {currentView === 'safety' && (
             <SafetyView
-              onNavigate={handleNavigate}
+              onProceed={() => handleNavigate('intro')}
+              onBack={() => handleNavigate('consent')}
               onOpenCrisis={() => setIsCrisisModalOpen(true)}
             />
           )}
@@ -244,16 +238,19 @@ export default function App() {
 
           {currentView === 'results' && (
             <ResultsView
-              assessment={currentAssessment}
-              onSimulate={setCurrentAssessment}
+              result={currentAssessment}
               onNavigate={handleNavigate}
               onRetake={handleStartAssessment}
+              onOpenGrounding={() => setIsGroundingModalOpen(true)}
               onOpenCrisis={() => setIsCrisisModalOpen(true)}
             />
           )}
 
           {currentView === 'symptoms' && (
-            <SymptomsView onNavigate={handleNavigate} />
+            <SymptomsView
+              onNavigate={handleNavigate}
+              onOpenGrounding={() => setIsGroundingModalOpen(true)}
+            />
           )}
 
           {currentView === 'chat' && (
@@ -273,9 +270,8 @@ export default function App() {
           {currentView === 'dashboard' && (
             <DashboardView 
               onNavigate={handleNavigate}
-              checkIns={checkIns}
-              onOpenCheckIn={() => setIsCheckInModalOpen(true)}
-              onOpenPreviousCheckIns={() => setIsPreviousCheckInsModalOpen(true)}
+              assessments={historyList}
+              onStartAssessment={handleStartAssessment}
               onOpenGrounding={() => setIsGroundingModalOpen(true)}
               onOpenCrisis={() => setIsCrisisModalOpen(true)}
             />
@@ -284,11 +280,12 @@ export default function App() {
           {currentView === 'history' && (
             <HistoryView
               historyList={historyList}
-              onClearHistory={() => setHistoryList([])}
+              onClearHistory={() => {
+                setHistoryList([]);
+                saveStoredAssessments([]);
+              }}
               onNavigate={handleNavigate}
               onInspectRecord={handleInspectRecord}
-              checkIns={checkIns}
-              onOpenCheckIn={() => setIsCheckInModalOpen(true)}
             />
           )}
 
@@ -314,37 +311,6 @@ export default function App() {
       <GroundingModal
         isOpen={isGroundingModalOpen}
         onClose={() => setIsGroundingModalOpen(false)}
-      />
-
-      {/* Daily Mood & Wellbeing Check-in Modal */}
-      <DailyCheckInModal
-        isOpen={isCheckInModalOpen}
-        onClose={() => setIsCheckInModalOpen(false)}
-        onSave={handleSaveCheckIn}
-        todayCheckIn={todayCheckIn}
-        onOpenGrounding={() => {
-          setIsCheckInModalOpen(false);
-          setIsGroundingModalOpen(true);
-        }}
-        onOpenCrisis={() => {
-          setIsCheckInModalOpen(false);
-          setIsCrisisModalOpen(true);
-        }}
-        onOpenChat={() => {
-          setIsCheckInModalOpen(false);
-          handleNavigate('chat');
-        }}
-      />
-
-      {/* Previous Daily Check-ins History Modal */}
-      <PreviousCheckInsModal
-        isOpen={isPreviousCheckInsModalOpen}
-        onClose={() => setIsPreviousCheckInsModalOpen(false)}
-        checkIns={checkIns}
-        onOpenCheckIn={() => {
-          setIsPreviousCheckInsModalOpen(false);
-          setIsCheckInModalOpen(true);
-        }}
       />
     </div>
   );

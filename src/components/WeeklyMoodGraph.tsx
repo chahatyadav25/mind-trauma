@@ -1,14 +1,21 @@
 import React, { useState } from 'react';
 import { WeeklyTrendDay } from '../types';
-import { MOOD_OPTIONS } from '../data/screeningData';
-import { Calendar, HelpCircle, ArrowRight, ShieldCheck, Heart } from 'lucide-react';
+import { Calendar, ArrowRight } from 'lucide-react';
 
 interface WeeklyMoodGraphProps {
   days: WeeklyTrendDay[];
-  onOpenCheckIn?: () => void;
+  onStartAssessment?: () => void;
 }
 
-export const WeeklyMoodGraph: React.FC<WeeklyMoodGraphProps> = ({ days, onOpenCheckIn }) => {
+const SCORE_LEVELS = [
+  { score: 5, label: 'Optimal', emoji: '😊' },
+  { score: 4, label: 'Good', emoji: '🙂' },
+  { score: 3, label: 'Moderate', emoji: '😐' },
+  { score: 2, label: 'Low', emoji: '🙁' },
+  { score: 1, label: 'Very Low', emoji: '😔' },
+];
+
+export const WeeklyMoodGraph: React.FC<WeeklyMoodGraphProps> = ({ days, onStartAssessment }) => {
   const [activeDayIndex, setActiveDayIndex] = useState<number | null>(null);
 
   // SVG Chart Geometry
@@ -22,10 +29,10 @@ export const WeeklyMoodGraph: React.FC<WeeklyMoodGraphProps> = ({ days, onOpenCh
   const chartWidth = svgWidth - padLeft - padRight;
   const chartHeight = svgHeight - padTop - padBottom;
 
-  // Y Coordinate for Mood score (1 to 5)
+  // Y Coordinate for Assessment score (0 to 5, where 5 is top and 0 is baseline)
   const getY = (score: number) => {
-    // score 5 at padTop (30), score 1 at padTop + chartHeight (185)
-    return padTop + chartHeight - ((score - 1) / 4) * chartHeight;
+    const clamped = Math.max(0, Math.min(5, score));
+    return padTop + chartHeight - (clamped / 5) * chartHeight;
   };
 
   // X Coordinate for Day Index (0 to 6)
@@ -33,18 +40,17 @@ export const WeeklyMoodGraph: React.FC<WeeklyMoodGraphProps> = ({ days, onOpenCh
     return padLeft + (index / 6) * chartWidth;
   };
 
-  // Group contiguous segments of days that have valid numeric mood scores
-  // Strict rule: do not connect across missing days or "prefer not to say"
+  // Group contiguous segments of days that have recorded assessment scores
   const segments: { index: number; x: number; y: number; score: number }[][] = [];
   let currentSegment: { index: number; x: number; y: number; score: number }[] = [];
 
   days.forEach((day, index) => {
-    if (day.checkIn && typeof day.checkIn.mood === 'number') {
+    if (day.assessment && typeof day.assessment.score === 'number') {
       currentSegment.push({
         index,
         x: getX(index),
-        y: getY(day.checkIn.mood),
-        score: day.checkIn.mood
+        y: getY(day.assessment.score),
+        score: day.assessment.score
       });
     } else {
       if (currentSegment.length > 0) {
@@ -57,12 +63,12 @@ export const WeeklyMoodGraph: React.FC<WeeklyMoodGraphProps> = ({ days, onOpenCh
     segments.push(currentSegment);
   }
 
-  // Active selected day for details card (default to today if has check-in or last recorded)
+  // Active selected day for details card (default to today if has assessment or last recorded)
   const selectedDay = activeDayIndex !== null 
     ? days[activeDayIndex] 
-    : days.find(d => d.isToday && d.checkIn) || [...days].reverse().find(d => d.checkIn) || days.find(d => d.isToday) || days[0];
+    : days.find(d => d.isToday && d.assessment) || [...days].reverse().find(d => d.assessment) || days.find(d => d.isToday) || days[0];
 
-  const recordedCount = days.filter(d => d.checkIn).length;
+  const recordedCount = days.filter(d => d.assessment).length;
 
   return (
     <div className="flex flex-col w-full">
@@ -71,7 +77,7 @@ export const WeeklyMoodGraph: React.FC<WeeklyMoodGraphProps> = ({ days, onOpenCh
         <svg
           viewBox={`0 0 ${svgWidth} ${svgHeight}`}
           className="w-full h-auto min-w-[500px]"
-          aria-label="Weekly Mood Trend Graph"
+          aria-label="Weekly Well-Being & Mood Trend Graph"
         >
           <defs>
             <linearGradient id="lineGrad" x1="0%" y1="0%" x2="100%" y2="0%">
@@ -84,11 +90,11 @@ export const WeeklyMoodGraph: React.FC<WeeklyMoodGraphProps> = ({ days, onOpenCh
             </filter>
           </defs>
 
-          {/* Background Grid Lines & Mood Labels */}
-          {MOOD_OPTIONS.slice().reverse().map(mood => {
-            const y = getY(mood.score);
+          {/* Background Grid Lines & Score Labels */}
+          {SCORE_LEVELS.map(level => {
+            const y = getY(level.score);
             return (
-              <g key={mood.score} className="text-gray-400">
+              <g key={level.score} className="text-gray-400">
                 {/* Subtle horizontal gridline */}
                 <line
                   x1={padLeft - 10}
@@ -99,19 +105,29 @@ export const WeeklyMoodGraph: React.FC<WeeklyMoodGraphProps> = ({ days, onOpenCh
                   strokeDasharray="4 4"
                   strokeWidth="1"
                 />
-                {/* Y-axis Mood Label & Emoji */}
+                {/* Y-axis Score Label & Emoji */}
                 <text
                   x={padLeft - 16}
                   y={y + 4}
                   textAnchor="end"
                   className="text-[11px] font-sans fill-gray-500 font-medium"
                 >
-                  <tspan className="text-[12px]">{mood.emoji} </tspan>
-                  <tspan>{mood.label.split(' ')[0]}</tspan>
+                  <tspan className="text-[12px]">{level.emoji} </tspan>
+                  <tspan>{level.score}/5</tspan>
                 </text>
               </g>
             );
           })}
+
+          {/* Baseline (0 score line) */}
+          <line
+            x1={padLeft - 10}
+            y1={getY(0)}
+            x2={svgWidth - padRight}
+            y2={getY(0)}
+            stroke="#F3F4F6"
+            strokeWidth="1"
+          />
 
           {/* Today Highlight Column */}
           {days.map((day, idx) => {
@@ -170,9 +186,9 @@ export const WeeklyMoodGraph: React.FC<WeeklyMoodGraphProps> = ({ days, onOpenCh
           {/* Day Nodes & X-Axis Column Headers */}
           {days.map((day, idx) => {
             const x = getX(idx);
-            const hasCheckIn = !!day.checkIn;
-            const hasNumericMood = hasCheckIn && typeof day.checkIn?.mood === 'number';
-            const y = hasNumericMood ? getY(day.checkIn!.mood!) : null;
+            const hasAssessment = !!day.assessment;
+            const hasNumericScore = hasAssessment && typeof day.assessment?.score === 'number';
+            const y = hasNumericScore ? getY(day.assessment!.score) : null;
             const isSelected = selectedDay && selectedDay.dateStr === day.dateStr;
 
             return (
@@ -192,7 +208,7 @@ export const WeeklyMoodGraph: React.FC<WeeklyMoodGraphProps> = ({ days, onOpenCh
                 />
 
                 {/* Data Point Node */}
-                {hasNumericMood && y !== null ? (
+                {hasNumericScore && y !== null ? (
                   <g filter="url(#pointShadow)">
                     {/* Pulsing selection ring */}
                     {isSelected && (
@@ -218,26 +234,15 @@ export const WeeklyMoodGraph: React.FC<WeeklyMoodGraphProps> = ({ days, onOpenCh
                     />
                     {/* Inner core */}
                     <circle cx={x} cy={y} r="2.5" fill="#FFFFFF" />
-                  </g>
-                ) : hasCheckIn && day.checkIn?.mood === null ? (
-                  /* Answered "Prefer not to say" */
-                  <g>
-                    <circle
-                      cx={x}
-                      cy={padTop + chartHeight / 2}
-                      r="7"
-                      fill="#F3F4F6"
-                      stroke="#9CA3AF"
-                      strokeWidth="2"
-                      strokeDasharray="2 2"
-                    />
+
+                    {/* Small score label badge above node */}
                     <text
                       x={x}
-                      y={padTop + chartHeight / 2 + 3}
+                      y={y - 12}
                       textAnchor="middle"
-                      className="text-[9px] font-bold fill-gray-500 font-sans"
+                      className="text-[10px] font-bold fill-teal-800 font-sans select-none"
                     >
-                      ?
+                      {day.assessment!.score}/5
                     </text>
                   </g>
                 ) : (
@@ -306,7 +311,7 @@ export const WeeklyMoodGraph: React.FC<WeeklyMoodGraphProps> = ({ days, onOpenCh
         <div className="flex items-center gap-4 flex-wrap">
           <span className="flex items-center gap-1.5">
             <span className="w-2.5 h-2.5 rounded-full bg-teal-600 inline-block shadow-2xs" />
-            <span className="font-medium text-gray-700">Recorded Check-in</span>
+            <span className="font-medium text-gray-700">Recorded Assessment</span>
           </span>
           <span className="flex items-center gap-1.5">
             <span className="w-2.5 h-2.5 rounded-full border border-dashed border-gray-400 inline-block" />
@@ -339,58 +344,51 @@ export const WeeklyMoodGraph: React.FC<WeeklyMoodGraphProps> = ({ days, onOpenCh
               )}
             </div>
 
-            {selectedDay.checkIn ? (
+            {selectedDay.assessment ? (
               <span className="text-xs text-teal-700 font-semibold bg-teal-50 px-2.5 py-0.5 rounded-full border border-teal-200/60">
-                Check-in Recorded
+                Assessment Recorded
               </span>
             ) : (
               <span className="text-xs text-gray-500 bg-gray-100 px-2.5 py-0.5 rounded-full">
-                No check-in entry
+                No entry recorded
               </span>
             )}
           </div>
 
-          {selectedDay.checkIn ? (
+          {selectedDay.assessment ? (
             <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 text-xs">
               <div className="bg-gray-50 p-2.5 rounded-xl border border-gray-100">
-                <span className="text-[11px] text-gray-500 block">Mood Today</span>
+                <span className="text-[11px] text-gray-500 block">Well-Being Score</span>
                 <span className="font-bold text-gray-900 text-sm flex items-center gap-1 mt-0.5">
-                  {selectedDay.checkIn.mood !== null ? (
-                    <>
-                      <span>{MOOD_OPTIONS.find(m => m.score === selectedDay.checkIn?.mood)?.emoji}</span>
-                      <span>{selectedDay.checkIn.moodLabel}</span>
-                    </>
-                  ) : (
-                    <span className="text-gray-500 font-normal">Prefer not to say</span>
-                  )}
+                  <span>{selectedDay.assessment.score} / 5</span>
                 </span>
               </div>
 
               <div className="bg-gray-50 p-2.5 rounded-xl border border-gray-100">
-                <span className="text-[11px] text-gray-500 block">Stress Level</span>
-                <span className="font-semibold text-gray-900 block mt-0.5 truncate" title={selectedDay.checkIn.stressLevel}>
-                  {selectedDay.checkIn.stressLevel}
+                <span className="text-[11px] text-gray-500 block">Assessment Status</span>
+                <span className="font-semibold text-gray-900 block mt-0.5 truncate" title={selectedDay.assessment.statusText}>
+                  {selectedDay.assessment.statusText}
                 </span>
               </div>
 
               <div className="bg-gray-50 p-2.5 rounded-xl border border-gray-100">
-                <span className="text-[11px] text-gray-500 block">Recent Sleep</span>
-                <span className="font-semibold text-gray-900 block mt-0.5 truncate" title={selectedDay.checkIn.sleepQuality}>
-                  {selectedDay.checkIn.sleepQuality}
+                <span className="text-[11px] text-gray-500 block">Anxiety (GAD-7)</span>
+                <span className="font-semibold text-gray-900 block mt-0.5 truncate">
+                  {selectedDay.assessment.gad7Score !== undefined ? `${selectedDay.assessment.gad7Score} / 21` : 'N/A'}
                 </span>
               </div>
 
               <div className="bg-gray-50 p-2.5 rounded-xl border border-gray-100">
-                <span className="text-[11px] text-gray-500 block">Felt Supported</span>
-                <span className="font-semibold text-gray-900 block mt-0.5 truncate" title={selectedDay.checkIn.feltSupported}>
-                  {selectedDay.checkIn.feltSupported}
+                <span className="text-[11px] text-gray-500 block">Risk Triage</span>
+                <span className="font-semibold text-gray-900 block mt-0.5 capitalize truncate">
+                  {selectedDay.assessment.riskLevel || 'Routine'}
                 </span>
               </div>
 
-              {selectedDay.checkIn.notes && (
+              {selectedDay.assessment.summary && (
                 <div className="col-span-2 sm:col-span-4 bg-teal-50/60 p-2.5 rounded-xl border border-teal-100 text-xs text-teal-950">
-                  <span className="font-bold text-teal-800 mr-1">Reflection:</span>
-                  <span className="italic">{selectedDay.checkIn.notes}</span>
+                  <span className="font-bold text-teal-800 mr-1">Summary:</span>
+                  <span>{selectedDay.assessment.summary}</span>
                 </div>
               )}
             </div>
@@ -398,19 +396,11 @@ export const WeeklyMoodGraph: React.FC<WeeklyMoodGraphProps> = ({ days, onOpenCh
             <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 text-xs text-gray-500 py-1">
               <span>
                 {selectedDay.isFuture
-                  ? 'This day is in the future. You can check in when this day arrives.'
-                  : 'No check-in was recorded on this day. We keep it blank without guessing.'}
+                  ? 'This day is in the future. You can complete your well-being check when this day arrives.'
+                  : selectedDay.isToday
+                  ? 'No assessment was recorded yet for today. Use the Daily Well-Being Check button above to log today\'s entry.'
+                  : 'No assessment was recorded on this day. We keep it blank without guessing.'}
               </span>
-              {selectedDay.isToday && onOpenCheckIn && (
-                <button
-                  type="button"
-                  onClick={onOpenCheckIn}
-                  className="px-3 py-1.5 rounded-lg bg-black text-white font-semibold text-xs hover:bg-gray-800 transition-colors flex items-center gap-1 cursor-pointer shrink-0"
-                >
-                  <span>Complete Today's Check-in</span>
-                  <ArrowRight className="w-3.5 h-3.5" />
-                </button>
-              )}
             </div>
           )}
         </div>
